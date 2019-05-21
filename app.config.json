@@ -1,0 +1,4 @@
+{
+  "distDir": "dist",
+  "defaultServerUrl": "http://localhost:5000"
+}

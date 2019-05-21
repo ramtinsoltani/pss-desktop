@@ -1,27 +1,30 @@
-# PssDesktop
+# Personal Shared Storage Desktop App
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 7.3.9.
+This is a desktop app made with Angular 7 and Electron to act as the client for [Personal Shared Storage API Server](https://github.com/ramtinsoltani/pss-api-server).
 
-## Development server
+# Installation
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+  1. Install Node JS and NPM (latest LTS).
+  2. Install dependencies by running `sudo npm install`.
+  3. Make sure NPX is installed, if not, install it globally by running `sudo npm install npx -g`.
 
-## Code scaffolding
+# Commands
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+  - Building the web app: `sudo npm run build`
+  - Running the Electron app locally: `npm run electron`
 
-## Build
+# Electron Main IPC API
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+| Event Name | States | Arguments | Callback Arguments | Description |
+|:-----------|:------:|:---------:|:--------:|:------------|
+| open-files | `done` `error` | | `filenames` | Shows the open file dialog and returns the selected filenames or null if canceled. |
+| save-file | `done` `error` | | `filename` | Shows the save file dialog and returns the selected filename or null if canceled. |
+| save-files | `done` `error` | | `dirname` | Shows the select directory dialog and returns the selected directory name or null if canceled. |
+| notify | | `title` `message` | | Shows a system notification. |
+| server-api | `done` `error` | `endpoint` `method` `query` `body` `headers` | `endpoint` `response` | Sends a request to the server using the provided arguments and returns the response. |
+| file-upload | `start` `progress` `done` `error` | `filename` `size` `token` `remoteFilename` | `filename` `response` | Uploads a file by the given filename on the server with the remote name and returns the response. |
+| file-download | `start` `progress` `done` `error` | `remoteFilename` `filename` `token` | `filename` `response` | Downloads the specified remote file at the specified path and returns the response. |
 
-## Running unit tests
+> **NOTE:** All `progress` states send the following callback arguments: `filename` `progress` (which is the total downloaded bytes.)
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
-
-## Running end-to-end tests
-
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
-
-## Further help
-
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+> **NOTE:** All `error` states send the the `error` object (and some send the `filename` as an identifier if `filename` is normally sent in the `done` state.)

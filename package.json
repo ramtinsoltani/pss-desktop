@@ -4,11 +4,13 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --prod --base-href ./ && tsc main.ts --lib 'es2018,dom' --target es5 --esModuleInterop --resolveJsonModule && npx uglifyjs --compress --mangle --toplevel --output main.js -- main.js",
     "test": "ng test",
     "lint": "ng lint",
-    "e2e": "ng e2e"
+    "e2e": "ng e2e",
+    "electron": "npx electron ."
   },
+  "main": "main.js",
   "private": true,
   "dependencies": {
     "@angular/animations": "~7.2.0",
@@ -20,6 +22,10 @@
     "@angular/platform-browser-dynamic": "~7.2.0",
     "@angular/router": "~7.2.0",
     "core-js": "^2.5.4",
+    "fs-extra": "^8.0.1",
+    "lodash": "^4.17.11",
+    "ngx-electron": "^2.1.1",
+    "request": "^2.88.0",
     "rxjs": "~6.3.3",
     "tslib": "^1.9.0",
     "zone.js": "~0.8.26"
@@ -29,10 +35,13 @@
     "@angular/cli": "~7.3.9",
     "@angular/compiler-cli": "~7.2.0",
     "@angular/language-service": "~7.2.0",
-    "@types/node": "~8.9.4",
+    "@types/fs-extra": "^7.0.0",
     "@types/jasmine": "~2.8.8",
     "@types/jasminewd2": "~2.0.3",
+    "@types/node": "~8.9.4",
+    "@types/request": "^2.48.1",
     "codelyzer": "~4.5.0",
+    "electron": "^5.0.1",
     "jasmine-core": "~2.99.1",
     "jasmine-spec-reporter": "~4.2.1",
     "karma": "~4.0.0",
@@ -43,6 +52,7 @@
     "protractor": "~5.4.0",
     "ts-node": "~7.0.0",
     "tslint": "~5.11.0",
-    "typescript": "~3.2.2"
+    "typescript": "~3.2.2",
+    "uglify-es": "^3.3.9"
   }
 }
