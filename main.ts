@@ -2,7 +2,7 @@ import { app, BrowserWindow, Menu, ipcMain, dialog, Notification } from 'electro
 import fs from 'fs-extra';
 import path from 'path';
 import request from 'request';
-import config from 'app.config.json';
+import config from './app.config.json';
 
 class AppError extends Error {
 
@@ -301,7 +301,7 @@ class ElectronApp {
     return new Promise((resolve, reject) => {
 
       request({
-        uri: this.config.defaultServerUrl + endpoint,
+        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}${endpoint}`,
         method: method,
         qs: query,
         body: body,
@@ -312,7 +312,7 @@ class ElectronApp {
 
         resolve({
           status: response.statusCode,
-          body: response.body
+          body: JSON.parse(response.body)
         });
 
       });
@@ -326,24 +326,45 @@ class ElectronApp {
     return new Promise((resolve, reject) => {
 
       let progress: number = 0;
+      let stream: fs.WriteStream = null;
 
-      request.get(this.config.defaultServerUrl + remoteFilename, { qs: { token: token } })
+      request.get({
+        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs/${remoteFilename}`,
+        qs: { token: token }
+      })
+      .on('response', response => {
+
+        if ( response.statusCode !== 200 ) {
+
+          reject({ status: response.statusCode });
+
+        }
+        else {
+
+          stream = fs.createWriteStream(filename);
+
+        }
+
+      })
       .on('data', chunk => {
+
+        if ( ! stream ) return;
+
+        stream.write(chunk);
 
         progress += chunk.length;
         listener.send('file-download:progress', filename, progress);
 
       })
-      .on('response', response => {
+      .on('end', () => {
 
-        resolve({
-          status: response.statusCode,
-          body: response.body
-        });
+        if ( ! stream ) return;
+
+        stream.close();
+        resolve({ status: 200 });
 
       })
-      .on('error', reject)
-      .pipe(fs.createWriteStream(filename));
+      .on('error', reject);
 
     });
 
@@ -354,17 +375,25 @@ class ElectronApp {
     return new Promise((resolve, reject) => {
 
       let progress: number = 0;
-      const r = request.post(this.config.defaultServerUrl + remoteFilename, { qs: { token: token } });
 
       fs.createReadStream(filename, { highWaterMark: 500 })
-      .pipe(r)
       .on('data', chunk => {
 
         progress += chunk.length;
         listener.send('file-upload:progress', filename, progress);
 
       })
+      .pipe(request.post({
+        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs/${remoteFilename}`,
+        qs: { token: token },
+        headers: {
+          'Content-Length': size,
+          'Content-Type': 'application/octet-stream'
+        }
+      }))
       .on('response', response => {
+
+        if ( response.statusCode !== 200 ) return reject({ status: response.statusCode });
 
         resolve({
           status: response.statusCode,

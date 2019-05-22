@@ -28,3 +28,37 @@ This is a desktop app made with Angular 7 and Electron to act as the client for 
 > **NOTE:** All `progress` states send the following callback arguments: `filename` `progress` (which is the total downloaded bytes.)
 
 > **NOTE:** All `error` states send the the `error` object (and some send the `filename` as an identifier if `filename` is normally sent in the `done` state.)
+
+# Angular Directives
+
+The following directives are available...
+
+## Dropzone Directive
+
+The `dropzone` directive configures an element as a file drop zone which captures all files that are dragged and dropped and emits an event with the following argument:
+
+```json
+[
+  {
+    "path": "string",
+    "size": "number",
+    "filename": "string"
+  }
+]
+```
+
+**Example:**
+
+```html
+<div (dropzone)="onDrop($event)"></div>
+```
+
+```ts
+import { DropzoneEvent } from '@app/directive/dropzone';
+
+onDrop(event: DropzoneEvent) {
+  for ( const file of event) {
+    console.log(file.path, file.size, file.filename);
+  }
+}
+```

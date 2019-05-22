@@ -4,10 +4,12 @@ import { NgModule } from '@angular/core';
 import { AppRoutingModule } from './app-routing.module';
 import { NgxElectronModule } from 'ngx-electron';
 import { AppComponent } from './app.component';
+import { DropzoneDirective } from '@app/directive/dropzone';
 
 @NgModule({
   declarations: [
-    AppComponent
+    AppComponent,
+    DropzoneDirective
   ],
   imports: [
     BrowserModule,
