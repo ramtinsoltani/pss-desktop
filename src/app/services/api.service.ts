@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ElectronService } from 'ngx-electron';
-import { HealthResponse, IPCResponse, TokenResponse, ErrorResponse, MessageResponse } from '@app/model/api';
-import { BehaviorSubject, Observable, Observer } from 'rxjs';
+import { HealthResponse, IPCResponse, TokenResponse, ErrorResponse, MessageResponse, UserResponse, UsersListResponse } from '@app/model/api';
+import { BehaviorSubject } from 'rxjs';
 import _ from 'lodash';
 
 @Injectable({
@@ -11,8 +11,10 @@ export class ApiService {
 
   private _disabled: boolean = true;
   private _token: string = null;
-  private ipc: Electron.IpcRenderer;
+  private _admin: boolean = false;
+  private _username: string = null;
 
+  public ipc: Electron.IpcRenderer;
   public isReady: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(! this._disabled);
   public onAuthenticationChanged: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(!! this._token);
 
@@ -84,17 +86,33 @@ export class ApiService {
 
   }
 
-  private detachListeners(channel: string, ...listeners: Function[]): void {
+  private updateUser(): Promise<void> {
 
-    for ( const listener of listeners ) {
+    return new Promise((resolve, reject) => {
 
-      this.ipc.removeListener(channel, listener);
+      this.server<UserResponse>('/auth/user', 'get')
+      .then(user => {
 
-    }
+        this._admin = user.admin;
+        this._username = user.username;
+
+        resolve();
+
+      })
+      .catch(error => {
+
+        this._admin = false;
+
+        console.error(error);
+        reject(error);
+
+      });
+
+    });
 
   }
 
-  private server<T>(endpoint: string, method: string, query?: any, body?: any, headers?: any, auth: boolean = true): Promise<T> {
+  public server<T>(endpoint: string, method: string, query?: any, body?: any, headers?: any, auth: boolean = true): Promise<T> {
 
     return new Promise<T>((resolve, reject) => {
 
@@ -136,6 +154,18 @@ export class ApiService {
 
   public get disabled(): boolean { return this._disabled; }
   public get authenticated(): boolean { return this._token !== null; }
+  public get isAdmin(): boolean { return this._admin; }
+  public get token(): string { return this._token; }
+
+  public detachListeners(channel: string, ...listeners: Function[]): void {
+
+    for ( const listener of listeners ) {
+
+      this.ipc.removeListener(channel, listener);
+
+    }
+
+  }
 
   public checkHealth(): void {
 
@@ -147,6 +177,8 @@ export class ApiService {
 
     return new Promise((resolve, reject) => {
 
+      if ( this._disabled ) return reject('Service is disabled due to server health check!');
+
       const basic: string = `Basic ${Buffer.from(`${username}:${password}`).toString('base64')}`;
 
       this.server<TokenResponse>('/auth/login', 'post', undefined, undefined, {
@@ -155,6 +187,12 @@ export class ApiService {
       .then(response => {
 
         this._token = response.token;
+
+        return this.updateUser();
+
+      })
+      .then(() => {
+
         this.onAuthenticationChanged.next(true);
 
         resolve();
@@ -176,10 +214,18 @@ export class ApiService {
 
     return new Promise((resolve, reject) => {
 
+      if ( this._disabled ) return reject('Service is disabled due to server health check!');
+
       this.server<TokenResponse>('/auth/renew', 'post')
       .then(response => {
 
         this._token = response.token;
+
+        return this.updateUser();
+
+      })
+      .then(() => {
+
         this.onAuthenticationChanged.next(true);
 
         resolve();
@@ -188,6 +234,8 @@ export class ApiService {
       .catch(error => {
 
         this._token = null;
+        this._username = null;
+        this._admin = false;
         this.onAuthenticationChanged.next(false);
 
         reject(error);
@@ -202,10 +250,14 @@ export class ApiService {
 
     return new Promise((resolve, reject) => {
 
+      if ( this._disabled ) return reject('Service is disabled due to server health check!');
+
       this.server<MessageResponse>('/auth/logout', 'post')
       .then(response => {
 
         this._token = null;
+        this._username = null;
+        this._admin = false;
         this.onAuthenticationChanged.next(false);
 
         console.log(response.message);
@@ -219,49 +271,100 @@ export class ApiService {
 
   }
 
-  public uploadFile(filename: string, size: number, remoteFilename: string): Observable<number> {
+  public deleteUser(username: string): Promise<void> {
 
-    return Observable.create((observer: Observer<number>) => {
+    return new Promise((resolve, reject) => {
 
-      if ( this._disabled ) return observer.error(new Error('Service is disabled due to server health check!'));
+      if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
+      if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
 
-      const progressListener = (event, id: string, progress: number) => {
+      this.server<MessageResponse>('/auth/user', 'delete', null, { username: username })
+      .then(response => {
 
-        if ( id !== filename ) return;
+        console.log(response.message);
 
-        observer.next(progress);
+        if ( username === this._username ) {
 
-      };
+          this._token = null;
+          this._username = null;
+          this._admin = false;
 
-      const doneListener = (event, id: string, response: IPCResponse<any>) => {
+          this.onAuthenticationChanged.next(false);
 
-        if ( id !== filename ) return;
+        }
 
-        this.detachListeners('file-upload:progress', progressListener);
-        this.detachListeners('file-upload:done', doneListener);
-        this.detachListeners('file-upload:error', errorListener);
+        resolve();
 
-        observer.complete();
+      })
+      .catch(reject);
 
-      };
+    });
 
-      const errorListener = (event, id: string, error: Error) => {
+  }
 
-        if ( id !== filename ) return;
+  public deleteSelf(): Promise<void> {
 
-        this.detachListeners('file-upload:progress', progressListener);
-        this.detachListeners('file-upload:done', doneListener);
-        this.detachListeners('file-upload:error', errorListener);
+    return this.deleteUser(this._username);
 
-        observer.error(error);
+  }
 
-      };
+  public getUsers(): Promise<UsersListResponse> {
 
-      this.ipc
-      .on('file-upload:progress', progressListener)
-      .on('file-upload:done', doneListener)
-      .on('file-upload:error', errorListener)
-      .send('file-upload', filename, size, this._token, remoteFilename);
+    return new Promise((resolve, reject) => {
+
+      if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
+      if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
+
+      this.server<UsersListResponse>('/auth/users', 'get')
+      .then(resolve)
+      .catch(reject);
+
+    });
+
+  }
+
+  public register(username: string, password: string, admin: boolean): Promise<void> {
+
+    return new Promise((resolve, reject) => {
+
+      if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
+      if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
+
+      this.server<MessageResponse>('/auth/register', 'post', null, {
+        username: username,
+        password: Buffer.from(password).toString('base64'),
+        admin: admin
+      })
+      .then(response => {
+
+        console.log(response.message);
+        resolve();
+
+      })
+      .catch(reject);
+
+    });
+
+  }
+
+  public updatePassword(username: string, newPassword: string): Promise<void> {
+
+    return new Promise((resolve, reject) => {
+
+      if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
+      if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
+
+      this.server<MessageResponse>('/auth/user', 'put', null, {
+        username: username,
+        password: Buffer.from(newPassword).toString('base64')
+      })
+      .then(response => {
+
+        console.log(response.message);
+        resolve();
+
+      })
+      .catch(reject);
 
     });
 

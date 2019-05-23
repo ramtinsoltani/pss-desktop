@@ -59,13 +59,12 @@ export interface SearchResult {
 
 }
 
-export type UsersListResponse = User[];
+export type UsersListResponse = UserResponse[];
 
-export interface User {
+export interface UserResponse {
 
   username: string;
   admin: boolean;
-  uid: string;
 
 }
 
