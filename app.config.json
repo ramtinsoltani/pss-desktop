@@ -1,5 +1,4 @@
 {
-  "appDir": "dist",
   "defaultServerUrl": "http://localhost",
   "defaultServerPort": 5000
 }

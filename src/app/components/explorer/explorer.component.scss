@@ -1,0 +1,42 @@
+@import '../../../colors';
+
+:host {
+  display: flex;
+  flex-grow: 1;
+  width: calc(100% - 5px);
+  overflow-y: auto;
+  margin: 10px 0;
+  padding: 10px 20px;
+  box-sizing: border-box;
+  align-items: flex-start;
+  justify-content: flex-start;
+  align-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.child {
+  width: 140px;
+  font-size: 64px;
+  background-color: map-get($colors, gray-lighter);
+  padding: 20px;
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: map-get($colors, gray-darker);
+  border-radius: 5px;
+  user-select: none;
+  transition: background-color .2s ease-in-out, color .1s ease-in-out;
+  &.selected {
+    color: map-get($colors, accent);
+  }
+  &:hover {
+    background-color: map-get($colors, gray-light);
+  }
+  span.filename {
+    font-size: 16px;
+    margin-top: 10px;
+    text-align: center;
+  }
+}

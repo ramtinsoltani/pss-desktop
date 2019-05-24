@@ -37,13 +37,13 @@ class ElectronApp {
       minWidth: 500,
       minHeight: 350,
       backgroundColor: '#FFFFFF',
-      icon: `${__dirname}/${this.config.appDir}favicon.ico`,
+      icon: path.join(__dirname, 'favicon.ico'),
       webPreferences: {
         nodeIntegration: true
       }
     });
 
-    this.window.loadURL(`file://${__dirname}/${this.config.appDir}/index.html`);
+    this.window.loadURL(`file://${path.join(__dirname, 'index.html')}`);
     this.window.on('closed', () => { this.window = null; });
 
   }

@@ -1,0 +1,55 @@
+@import '../../../colors';
+
+.backshadow {
+  display: flex;
+  position: absolute;
+  z-index: 1000;
+  width: 100%;
+  height: 100%;
+  left: 0;
+  top: 0;
+  background-color: map-get($colors, backshadow);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  width: 33%;
+  max-width: 500px;
+  min-width: 350px;
+  background-color: map-get($colors, gray-lighter);
+  border-radius: 5px;
+  box-shadow: 0 3px 6px map-get($colors, dropshadow);
+  display: flex;
+  box-sizing: border-box;
+  flex-direction: column;
+  .modal-header {
+    font-weight: 500;
+    color: map-get($colors, gray-darker);
+    border-bottom: 1px solid map-get($colors, gray-light);
+    text-transform: uppercase;
+    font-size: 18px;
+    text-align: center;
+  }
+  .modal-footer {
+    border-top: 1px solid map-get($colors, gray-light);
+    & > *:not(:last-child) {
+      margin-bottom: 10px;
+    }
+  }
+  .modal-body {
+    padding: 30px 20px;
+    *:first-child {
+      margin-top: 0px;
+    }
+    *:last-child {
+      margin-bottom: 0px;
+    }
+    *:not(:last-child) {
+      margin-bottom: 10px;
+    }
+  }
+  .modal-header, .modal-footer {
+    padding: 20px;
+  }
+}

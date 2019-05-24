@@ -11,7 +11,7 @@ This is a desktop app made with Angular 7 and Electron to act as the client for 
 # Commands
 
   - Building the web app: `sudo npm run build`
-  - Running the Electron app locally: `npm run electron`
+  - Running the Electron app locally: `npm run electron` (do not use `sudo`!)
 
 # Electron Main IPC API
 
@@ -61,4 +61,30 @@ onDrop(event: DropzoneEvent) {
     console.log(file.path, file.size, file.filename);
   }
 }
+```
+
+# Angular Components
+
+The following components are available...
+
+## Modal Component
+
+The `app-modal` component is used to show content in a modal. It defines two optional attributes for controlling the visibility state of the modal: the boolean `modal-hidden` attribute and the element ref `modal-close` attribute which takes template reference and attaches a handler to its `onclose` event for closing the modal on click.
+
+This component also defines three sections inside its content: `modal-header`, `modal-body`, and `modal-footer`.
+
+**Example:**
+
+```html
+<app-modal [(modal-hidden)]="modalHidden" [modal-close]="closeButton">
+  <div class="modal-header">
+    Modal Title
+  </div>
+  <div class="modal-body">
+    Modal body
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary btn-block" #closeButton>Ok</button>
+  </div>
+</app-modal>
 ```

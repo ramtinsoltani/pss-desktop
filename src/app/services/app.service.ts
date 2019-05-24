@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '@app/service/api';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { DirectoryInfo, Queue, QueueItem } from '@app/model/app';
+import { FileInfo, DirectoryInfo, Queue, QueueItem } from '@app/model/app';
 import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse } from '@app/model/api';
 import _ from 'lodash';
 
@@ -18,6 +18,7 @@ export class AppService {
   private _uploading: boolean = false;
 
   public onPathUpdated: BehaviorSubject<DirectoryInfo> = new BehaviorSubject(this.currentDirectoryInfo);
+  public onAuthChanged: BehaviorSubject<boolean> = new BehaviorSubject(this.authenticated);
 
   constructor(
     private api: ApiService
@@ -40,6 +41,8 @@ export class AppService {
         this.onPathUpdated.next(this.currentDirectoryInfo);
 
       }
+
+      this.onAuthChanged.next(authenticated);
 
     });
 
@@ -183,7 +186,7 @@ export class AppService {
 
   private joinPath(filename: string): string {
 
-    return `/${this._currentPath}/${filename}`.replace(/\/+/, '/');
+    return `/${this._currentPath || ''}/${filename}`.replace(/\/+/g, '/');
 
   }
 
@@ -234,6 +237,36 @@ export class AppService {
   public get isAdmin(): boolean { return this.api.isAdmin; }
   public get currentPath(): string { return this._currentPath; }
   public get currentDirectoryInfo(): DirectoryInfo { return _.cloneDeep(this._currentDirectoryInfo); }
+
+  public newDirectoryChild(dir: boolean, name: string, size?: number): FileInfo|DirectoryInfo {
+
+    if ( dir ) return {
+      name: name,
+      path: this.joinPath(name),
+      children: []
+    };
+
+    return {
+      filename: name,
+      path: this.joinPath(name),
+      size: size,
+      created: Date.now(),
+      modified: Date.now()
+    }
+
+  }
+
+  public addDirectoryChild(child: FileInfo|DirectoryInfo): void {
+
+    this._currentDirectoryInfo.children.push(child);
+
+  }
+
+  public removeDirectoryChild(index: number): void {
+
+    this._currentDirectoryInfo.children.splice(index, 1);
+
+  }
 
   public showSaveDialog(dir?: boolean): Promise<string> {
 
@@ -295,14 +328,16 @@ export class AppService {
 
   }
 
-  public cd(dirname: string): Promise<void> {
+  public cdAbsolute(path: string): Promise<void> {
 
     return new Promise((resolve, reject) => {
 
-      this.api.server<DirectoryInfoResponse>(`/fs${this.joinPath(dirname)}`, 'get')
+      path = `/${path}`.replace(/\/+/g, '/');
+
+      this.api.server<DirectoryInfoResponse>(`/fs${path}`, 'get')
       .then(response => {
 
-        this._currentPath = this.joinPath(dirname);
+        this._currentPath = path;
         this._currentDirectoryInfo = response;
 
         this.onPathUpdated.next(this.currentDirectoryInfo);
@@ -313,6 +348,20 @@ export class AppService {
       .catch(reject);
 
     });
+
+  }
+
+  public cd(dirname: string): Promise<void> {
+
+    return this.cdAbsolute(this.joinPath(dirname));
+
+  }
+
+  public cdBack(): Promise<void> {
+
+    if ( this._currentPath === '/' ) return Promise.reject(new Error('Cannot cd back from root!'));
+
+    return this.cdAbsolute(this._currentPath.replace(/\/+$/, '').replace(/[^\/]+$/, ''));
 
   }
 
@@ -359,6 +408,12 @@ export class AppService {
   public find(query: string): Promise<SearchResultResponse> {
 
     return this.api.server<SearchResultResponse>('/search', 'get', { query: query });
+
+  }
+
+  public sendNotification(title: string, message: string): void {
+
+    this.api.ipc.send('notify', title, message);
 
   }
 

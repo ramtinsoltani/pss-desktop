@@ -1,1 +1,18 @@
-<router-outlet></router-outlet>
+<ng-template [ngIf]="! showLogin">
+  <app-header></app-header>
+  <router-outlet></router-outlet>
+  <app-footer></app-footer>
+</ng-template>
+<app-modal [modal-hidden]="! showLogin">
+  <form #f="ngForm" (ngSubmit)="login(f)">
+    <div class="modal-header">Login</div>
+    <div class="modal-body">
+      <p>Please login to your account to access the shared cloud.</p>
+        <input class="block" placeholder="Username" name="username" type="text" required ngModel minlength="6" maxlength="32">
+        <input class="block" placeholder="Password" name="password" type="password" required ngModel minlength="8" maxlength="64">
+    </div>
+    <div class="modal-footer">
+      <button type="submit" [disabled]="f.invalid" class="btn btn-block btn-primary">Login</button>
+    </div>
+  </form>
+</app-modal>

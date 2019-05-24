@@ -1,0 +1,11 @@
+@import '../../../colors';
+
+:host {
+  display: flex;
+  height: 50px;
+  width: 100%;
+  box-shadow: 0 -3px 6px map-get($colors, dropshadow);
+  align-items: center;
+  padding: 30px;
+  box-sizing: border-box;
+}

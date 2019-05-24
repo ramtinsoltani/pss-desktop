@@ -1,0 +1,11 @@
+<ng-template [ngIf]="currentDir">
+  <div
+  *ngFor="let child of currentDir.children; let index = index"
+  class="child"
+  [ngClass]="{ selected: index === selectedChild }"
+  (click)="selectChild(index)"
+  (dblclick)="openDir(index)">
+    <fa-icon [icon]="child.name ? 'folder' : 'file'" size="sm"></fa-icon>
+    <span class="filename">{{ child.name || child.filename }}</span>
+  </div>
+</ng-template>

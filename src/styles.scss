@@ -1,1 +1,133 @@
-/* You can add global styles to this file, and also import other style files */
+@import './colors';
+@import url('https://fonts.googleapis.com/css?family=Roboto:400,500,700&display=swap');
+
+* {
+  font-family: 'Roboto', sans-serif;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  background-color: transparent;
+}
+
+::-webkit-scrollbar-track {
+  width: 5px;
+  border-radius: 10px;
+  background-color: map-get($colors, gray-light);
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background-color: map-get($colors, gray-dark);
+  &:hover {
+    background-color: map-get($colors, gray-darker);
+  }
+}
+
+fa-icon.min-btn {
+  color: map-get($colors, gray-dark);
+  transition: color;
+  &:not(.idle) {
+    cursor: pointer;
+    &:hover {
+      color: map-get($colors, accent);
+    }
+  }
+}
+
+button.btn {
+  min-height: 50px;
+  border-radius: 5px;
+  transition: background-color .2s ease-in-out;
+  cursor: pointer;
+  outline: none !important;
+  text-transform: uppercase;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+  box-sizing: border-box;
+  border: none;
+  font-size: 16px;
+  color: map-get($colors, gray-lighter);
+  fa-icon {
+    margin-right: 10px;
+  }
+  &.btn-block { width: 100%; }
+  &.btn-primary {
+    background-color: map-get($colors, accent);
+    &:active {
+      background-color: map-get($colors, accent-dark);
+    }
+    &:disabled {
+      background-color: map-get($colors, accent-light);
+      cursor: default;
+    }
+  }
+  &.btn-secondary {
+    background-color: map-get($colors, gray-medium);
+    &:active {
+      background-color: map-get($colors, gray-dark);
+    }
+    &:disabled {
+      background-color: map-get($colors, gray-medium-light);
+      cursor: default;
+    }
+  }
+  &.btn-danger {
+    background-color: map-get($colors, error);
+    &:active {
+      background-color: map-get($colors, error-dark);
+    }
+    &:disabled {
+      background-color: map-get($colors, error-light);
+      cursor: default;
+    }
+  }
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: row;
+  button.btn {
+    width: 100%;
+    &:not(:last-child) {
+      margin-right: 10px;
+    }
+  }
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"] {
+  min-height: 40px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 16px;
+  border: 2px solid transparent;
+  background-color: map-get($colors, gray-light);
+  color: map-get($colors, gray-darker);
+  border-radius: 5px;
+  padding: 0 10px;
+  box-sizing: border-box;
+  outline: none !important;
+  transition: border-color .2s ease-in-out, color .2s ease-in-out;
+  &:focus {
+    border: 2px solid map-get($colors, accent);
+  }
+  &.block {
+    width: 100%;
+  }
+  &:disabled {
+    color: map-get($colors, gray-medium);
+  }
+}
