@@ -5,7 +5,7 @@
   [ngClass]="{ selected: child.filename && selection && selection[child.filename] }"
   (click)="selectChild($event, child.filename)"
   (dblclick)="openDir($event, child.name)">
-    <fa-icon [icon]="child.name ? 'folder' : 'file'" size="sm"></fa-icon>
+    <fa-icon [icon]="child.name ? 'folder' : getTypeIcon(child.filename)" size="sm"></fa-icon>
     <span class="filename">{{ child.name || child.filename }}</span>
   </div>
 </ng-template>
