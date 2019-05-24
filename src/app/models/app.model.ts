@@ -10,6 +10,12 @@ export interface QueueItem {
 
 }
 
+export interface FileSelection {
+
+  [filename: string]: boolean;
+
+}
+
 export type Queue = Array<QueueItem>;
 export type DirectoryInfo = DirectoryInfoResponse;
 export type FileInfo = FileInfoResponse;

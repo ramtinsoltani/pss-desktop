@@ -25,6 +25,12 @@ This is a desktop app made with Angular 7 and Electron to act as the client for 
 | file-upload | `start` `progress` `done` `error` | `filename` `size` `token` `remoteFilename` | `filename` `response` | Uploads a file by the given filename on the server with the remote name and returns the response. |
 | file-download | `start` `progress` `done` `error` | `remoteFilename` `filename` `token` | `filename` `response` | Downloads the specified remote file at the specified path and returns the response. |
 
+# Electron Renderer IPC API
+
+The following events are available for the renderer process to listen to:
+
+  - `keyboard-shortcut:ctrl+a`: Fired when Ctrl+A or Command+A is pressed.
+
 > **NOTE:** All `progress` states send the following callback arguments: `filename` `progress` (which is the total downloaded bytes.)
 
 > **NOTE:** All `error` states send the the `error` object (and some send the `filename` as an identifier if `filename` is normally sent in the `done` state.)
@@ -87,4 +93,14 @@ This component also defines three sections inside its content: `modal-header`, `
     <button type="button" class="btn btn-primary btn-block" #closeButton>Ok</button>
   </div>
 </app-modal>
+```
+
+## Progress Bar Component
+
+The `app-progress-bar` component is used whenever a progress bar is needed. It defines two attributes, one required attribute named `progress` which takes in the progress percentage (number only) and one optional attribute named `progress-threshold` which takes in a percentage threshold (number only) at which the progress bar turns red (defaults to `null`).
+
+**Example:**
+
+```html
+<app-progress-bar [progress]="50" [progress-threshold]="80"></app-progress-bar>
 ```

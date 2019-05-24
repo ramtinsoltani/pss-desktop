@@ -26,8 +26,7 @@
   align-items: center;
   color: map-get($colors, gray-darker);
   border-radius: 5px;
-  user-select: none;
-  transition: background-color .2s ease-in-out, color .1s ease-in-out;
+  transition: background-color .2s ease-in-out, color .05s ease-in-out;
   &.selected {
     color: map-get($colors, accent);
   }

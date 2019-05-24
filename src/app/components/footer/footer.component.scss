@@ -8,4 +8,18 @@
   align-items: center;
   padding: 30px;
   box-sizing: border-box;
+  color: map-get($colors, gray-dark);
+}
+
+span.space-info {
+  font-size: 10px;
+  margin-left: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+app-progress-bar {
+  margin-left: 20px;
+  width: 100px;
 }

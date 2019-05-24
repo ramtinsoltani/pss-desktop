@@ -118,9 +118,9 @@ export class ApiService {
 
       if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
 
-      const doneListener = (event, endpoint: string, response: IPCResponse<T>) => {
+      const doneListener = (event, id: string, response: IPCResponse<T>) => {
 
-        if ( endpoint !== endpoint ) return;
+        if ( endpoint !== id ) return;
 
         this.detachListeners('server-api:done', doneListener);
         this.detachListeners('server-api:error', errorListener);
@@ -131,9 +131,9 @@ export class ApiService {
 
       };
 
-      const errorListener = (event, endpoint: string, error: Error) => {
+      const errorListener = (event, id: string, error: Error) => {
 
-        if ( endpoint !== endpoint ) return;
+        if ( endpoint !== id ) return;
 
         this.detachListeners('server-api:done', doneListener);
         this.detachListeners('server-api:error', errorListener);

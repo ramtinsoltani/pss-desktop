@@ -13,7 +13,8 @@ import {
   HeaderComponent,
   FooterComponent,
   ExplorerComponent,
-  ModalComponent
+  ModalComponent,
+  ProgressBarComponent
 } from '@app/component';
 
 installIcons();
@@ -25,7 +26,8 @@ installIcons();
     HeaderComponent,
     FooterComponent,
     ExplorerComponent,
-    ModalComponent
+    ModalComponent,
+    ProgressBarComponent
   ],
   imports: [
     BrowserModule,

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '@app/service/api';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { FileInfo, DirectoryInfo, Queue, QueueItem } from '@app/model/app';
+import { FileInfo, DirectoryInfo, Queue, QueueItem, FileSelection } from '@app/model/app';
 import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse } from '@app/model/api';
 import _ from 'lodash';
 
@@ -16,9 +16,12 @@ export class AppService {
   private _uploadQueue: Queue = [];
   private _downloading: boolean = false;
   private _uploading: boolean = false;
+  private _fileSelection: FileSelection = {};
 
   public onPathUpdated: BehaviorSubject<DirectoryInfo> = new BehaviorSubject(this.currentDirectoryInfo);
   public onAuthChanged: BehaviorSubject<boolean> = new BehaviorSubject(this.authenticated);
+  public onSelectionChanged: BehaviorSubject<FileSelection> = new BehaviorSubject(this.fileSelection);
+  public onDiskSpaceRecalcNeeded: Subject<void> = new Subject();
 
   constructor(
     private api: ApiService
@@ -45,6 +48,8 @@ export class AppService {
       this.onAuthChanged.next(authenticated);
 
     });
+
+    this.onPathUpdated.subscribe(() => this.deselectAll());
 
   }
 
@@ -112,6 +117,8 @@ export class AppService {
       this.api.detachListeners('file-upload:done', doneListener);
       this.api.detachListeners('file-upload:error', errorListener);
 
+      this.onDiskSpaceRecalcNeeded.next();
+
       file.subject.complete();
 
     };
@@ -123,6 +130,8 @@ export class AppService {
       this.api.detachListeners('file-upload:progress', progressListener);
       this.api.detachListeners('file-upload:done', doneListener);
       this.api.detachListeners('file-upload:error', errorListener);
+
+      this.onDiskSpaceRecalcNeeded.next();
 
       file.subject.error(error);
 
@@ -237,6 +246,56 @@ export class AppService {
   public get isAdmin(): boolean { return this.api.isAdmin; }
   public get currentPath(): string { return this._currentPath; }
   public get currentDirectoryInfo(): DirectoryInfo { return _.cloneDeep(this._currentDirectoryInfo); }
+  public get fileSelection(): FileSelection { return _.cloneDeep(this._fileSelection); }
+
+  public deselectAll(): void {
+
+    if ( ! _.keys(this._fileSelection).length ) return;
+
+    this._fileSelection = {};
+
+    this.onSelectionChanged.next(this.fileSelection);
+
+  }
+
+  public selectFiles(filenames: string[], deselectFirst: boolean = false): void {
+
+    if ( deselectFirst ) this._fileSelection = {};
+
+    for ( const filename of filenames ) {
+
+      this._fileSelection[filename] = true;
+
+    }
+
+    this.onSelectionChanged.next(this.fileSelection);
+
+  }
+
+  public deselectFiles(filenames: string[]): void {
+
+    for ( const filename of filenames ) {
+
+      delete this._fileSelection[filename];
+
+    }
+
+    this.onSelectionChanged.next(this.fileSelection);
+
+  }
+
+  public negateSelection(filenames: string[]): void {
+
+    for ( const filename of filenames ) {
+
+      if ( this._fileSelection[filename] ) delete this._fileSelection[filename];
+      else this._fileSelection[filename] = true;
+
+    }
+
+    this.onSelectionChanged.next(this.fileSelection);
+
+  }
 
   public newDirectoryChild(dir: boolean, name: string, size?: number): FileInfo|DirectoryInfo {
 
@@ -388,6 +447,8 @@ export class AppService {
 
       this.api.server<MessageResponse>(`/fs${path}`, 'delete')
       .then(response => {
+
+        this.onDiskSpaceRecalcNeeded.next();
 
         console.log(response.message);
         resolve();
