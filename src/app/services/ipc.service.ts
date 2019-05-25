@@ -27,6 +27,20 @@ export class IpcService {
 
   }
 
+  public listen(channel: string, listeners: IPCStateListeners, options: IPCOptions = this.defaultOptions): void {
+
+    const interceptor = (event, response: IPCResponse) => {
+
+      if ( listeners[response.state] ) listeners[response.state](...response.data);
+
+      if ( response.close && ! options.keepOpen ) this.electron.ipcRenderer.removeListener(channel, interceptor);
+
+    };
+
+    this.electron.ipcRenderer.on(channel, interceptor);
+
+  }
+
   public send(channel: string, args: any[] = [], listeners: IPCStateListeners = {}, options: IPCOptions = this.defaultOptions): void {
 
     const id = options.forceId || this.generateEventId();
@@ -39,7 +53,7 @@ export class IpcService {
     };
 
     if ( Object.keys(listeners).length ) this.electron.ipcRenderer.on(`${channel}:${id}`, interceptor);
-    
+
     this.electron.ipcRenderer.send(channel, id, ...args);
 
   }

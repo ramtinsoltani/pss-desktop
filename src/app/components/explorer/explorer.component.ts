@@ -1,8 +1,7 @@
-import { Component, OnInit, OnDestroy, HostListener, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { AppService } from '@app/service/app';
-import { FileInfo, DirectoryInfo, FileSelection } from '@app/model/app';
+import { DirectoryInfo, FileSelection } from '@app/model/app';
 import { Subscription } from 'rxjs';
-import { ElectronService } from 'ngx-electron';
 
 @Component({
   selector: 'app-explorer',
@@ -13,35 +12,12 @@ export class ExplorerComponent implements OnInit, OnDestroy {
 
   private pathSub: Subscription;
   private selectionSub: Subscription;
-  private isWindowFocused: boolean = true;
-
-  @HostListener('body:click')
-  public onBodyClick() {
-
-    this.app.deselectAll();
-
-  }
-
-  @HostListener('window:focus')
-  public onWindowFocus() {
-
-    this.isWindowFocused = true;
-
-  }
-
-  @HostListener('window:blur')
-  public onWindowBlur() {
-
-    this.isWindowFocused = false;
-
-  }
 
   public currentDir: DirectoryInfo;
   public selection: FileSelection;
 
   constructor(
     private app: AppService,
-    private electron: ElectronService,
     private detector: ChangeDetectorRef
   ) { }
 
@@ -58,22 +34,6 @@ export class ExplorerComponent implements OnInit, OnDestroy {
 
       this.selection = selection;
       this.detector.detectChanges();
-
-    });
-
-    this.electron.ipcRenderer.on('keyboard-shortcut:ctrl+a', () => {
-
-      if ( ! this.currentDir || ! this.isWindowFocused ) return;
-
-      const filenames: string[] = [];
-
-      for ( const child of this.currentDir.children ) {
-
-        if ( child.hasOwnProperty('filename') ) filenames.push((<FileInfo>child).filename);
-
-      }
-
-      this.app.selectFiles(filenames, true);
 
     });
 

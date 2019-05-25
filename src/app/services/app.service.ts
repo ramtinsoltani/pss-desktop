@@ -23,6 +23,7 @@ export class AppService {
   public onAuthChanged: BehaviorSubject<boolean> = new BehaviorSubject(this.authenticated);
   public onSelectionChanged: BehaviorSubject<FileSelection> = new BehaviorSubject(this.fileSelection);
   public onDiskSpaceRecalcNeeded: Subject<void> = new Subject();
+  public isWindowFocused: boolean = true;
 
   constructor(
     private api: ApiService,

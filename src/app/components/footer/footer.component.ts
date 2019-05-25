@@ -10,6 +10,7 @@ import { Subscription } from 'rxjs';
 export class FooterComponent implements OnInit, OnDestroy {
 
   private diskSub: Subscription;
+  private readySub: Subscription;
 
   public freeSpace: number = 0;
   public totalSpace: number = 0;
@@ -39,11 +40,12 @@ export class FooterComponent implements OnInit, OnDestroy {
 
     this.diskSub = this.app.onDiskSpaceRecalcNeeded.subscribe(() => this.recalcDiskSpace());
 
-    const sub = this.app.isReady.subscribe(ready => {
+    this.readySub = this.app.isReady.subscribe(ready => {
 
       if ( ! ready ) return;
 
-      sub.unsubscribe();
+      if ( this.readySub && ! this.readySub.closed ) this.readySub.unsubscribe();
+      else if ( ! this.readySub ) setTimeout(() => this.readySub.unsubscribe(), 100);
 
       this.recalcDiskSpace();
 
@@ -54,6 +56,7 @@ export class FooterComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
 
     if ( this.diskSub && ! this.diskSub.closed ) this.diskSub.unsubscribe();
+    if ( this.readySub && ! this.readySub.closed ) this.readySub.unsubscribe();
 
   }
 

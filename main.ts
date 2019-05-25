@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, dialog, Notification, globalShortcut } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, dialog, Notification } from 'electron';
 import fs from 'fs-extra';
 import path from 'path';
 import request from 'request';
@@ -90,7 +90,6 @@ class ElectronApp {
       //
       // });
 
-      this.defineKeyboardShortcuts();
       this.defineIPCs();
       this.createWindow();
 
@@ -108,16 +107,6 @@ class ElectronApp {
 
       // macOS specific close process
       if ( this.window === null ) this.createWindow();
-
-    });
-
-  }
-
-  private defineKeyboardShortcuts(): void {
-
-    globalShortcut.register('CommandOrControl+A', () => {
-
-      this.window.webContents.send('keyboard-shortcut:ctrl+a');
 
     });
 
