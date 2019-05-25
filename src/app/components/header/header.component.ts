@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { AppService } from '@app/service/app';
 import { Subscription } from 'rxjs';
 
@@ -15,7 +15,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   public currentPath: string;
 
   constructor(
-    private app: AppService
+    private app: AppService,
+    private detector: ChangeDetectorRef
   ) { }
 
   ngOnInit() {
@@ -24,6 +25,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
       this.currentPath = this.app.currentPath;
       this.root = this.currentPath === '/';
+      this.detector.detectChanges();
 
     });
 

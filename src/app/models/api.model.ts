@@ -68,7 +68,7 @@ export interface UserResponse {
 
 }
 
-export interface IPCResponse<T> {
+export interface ServerResponse<T> {
 
   status: number;
   body: T;

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { AppService } from '@app/service/app';
 import { Subscription } from 'rxjs';
 
@@ -16,7 +16,8 @@ export class FooterComponent implements OnInit, OnDestroy {
   public usedSpaceRatio: number = 0;
 
   constructor(
-    private app: AppService
+    private app: AppService,
+    private detector: ChangeDetectorRef
   ) { }
 
   private recalcDiskSpace(): void {
@@ -27,6 +28,7 @@ export class FooterComponent implements OnInit, OnDestroy {
       this.freeSpace = Math.floor(info.free / (1000 * 1000 * 1000));
       this.totalSpace = Math.floor(info.total / (1000 * 1000 * 1000));
       this.usedSpaceRatio = Math.floor(((info.total - info.free) * 100) / info.total);
+      this.detector.detectChanges();
 
     })
     .catch(console.error);
@@ -37,7 +39,15 @@ export class FooterComponent implements OnInit, OnDestroy {
 
     this.diskSub = this.app.onDiskSpaceRecalcNeeded.subscribe(() => this.recalcDiskSpace());
 
-    this.recalcDiskSpace();
+    const sub = this.app.isReady.subscribe(ready => {
+
+      if ( ! ready ) return;
+
+      sub.unsubscribe();
+
+      this.recalcDiskSpace();
+
+    });
 
   }
 

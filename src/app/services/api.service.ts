@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
-import { ElectronService } from 'ngx-electron';
-import { HealthResponse, IPCResponse, TokenResponse, ErrorResponse, MessageResponse, UserResponse, UsersListResponse } from '@app/model/api';
-import { BehaviorSubject } from 'rxjs';
+import {
+  HealthResponse,
+  ServerResponse,
+  TokenResponse,
+  ErrorResponse,
+  MessageResponse,
+  UserResponse,
+  UsersListResponse
+} from '@app/model/api';
+import { BehaviorSubject, Subject } from 'rxjs';
+import { IpcService } from '@app/service/ipc';
 import _ from 'lodash';
 
 @Injectable({
@@ -14,37 +22,35 @@ export class ApiService {
   private _admin: boolean = false;
   private _username: string = null;
 
-  public ipc: Electron.IpcRenderer;
   public isReady: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(! this._disabled);
-  public onAuthenticationChanged: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(!! this._token);
+  public onAuthenticationChanged: Subject<boolean> = new Subject<boolean>();
 
   constructor(
-    private electron: ElectronService
+    private ipc: IpcService
   ) {
 
-    this.ipc = this.electron.ipcRenderer;
-
     // Server health listeners
-    this.ipc.on('server-api:done', (event, endpoint, response: IPCResponse<HealthResponse>) => {
+    this.ipc.send('server-api', ['/health'], {
 
-      if ( endpoint !== '/health' ) return;
+      'done': (response: ServerResponse<HealthResponse>) => {
 
-      this._disabled = ! response.body.running;
-      console.log('Server health:', ! this._disabled)
-      this.isReady.next(! this._disabled);
+        this._disabled = ! response.body.running;
+        console.log('Server health:', ! this._disabled)
+        this.isReady.next(! this._disabled);
 
+      },
+      'error': (error: Error) => {
+
+        this._disabled = true;
+        console.error(error);
+
+      }
+
+    },
+    {
+      keepOpen: true,
+      forceId: 'health-check'
     });
-
-    this.ipc.on('server-api:error', (event, endpoint, error) => {
-
-      if ( endpoint !== '/health' ) return;
-
-      this._disabled = true;
-      console.error(error);
-
-    });
-
-    this.checkHealth();
 
     // Authentication auto renewal
     setInterval(() => {
@@ -67,22 +73,20 @@ export class ApiService {
     // Reauthenticate for 24 hours if there's a last token as soon as the service is ready
     const lastToken = localStorage.getItem('lastToken');
 
-    if ( lastToken ) {
+    if ( ! lastToken ) return;
 
-      this._token = lastToken;
+    this._token = lastToken;
 
-      const sub = this.isReady.subscribe(ready => {
+    const sub = this.isReady.subscribe(ready => {
 
-        if ( ! ready ) return;
+      if ( ! ready ) return;
 
-        sub.unsubscribe();
+      sub.unsubscribe();
 
-        this.reauthenticate()
-        .catch(console.error);
+      this.reauthenticate()
+      .catch(console.error);
 
-      });
-
-    }
+    });
 
   }
 
@@ -118,35 +122,23 @@ export class ApiService {
 
       if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
 
-      const doneListener = (event, id: string, response: IPCResponse<T>) => {
-
-        if ( endpoint !== id ) return;
-
-        this.detachListeners('server-api:done', doneListener);
-        this.detachListeners('server-api:error', errorListener);
-
-        if ( response.status === 200 ) resolve(response.body);
-        else reject(new Error(response.body && (<ErrorResponse><unknown>response.body).error ? `[SERVER ERROR: ${(<ErrorResponse><unknown>response.body).code}] ${(<ErrorResponse><unknown>response.body).message}` : `Server responded with status ${response.status}!`));
-
-
-      };
-
-      const errorListener = (event, id: string, error: Error) => {
-
-        if ( endpoint !== id ) return;
-
-        this.detachListeners('server-api:done', doneListener);
-        this.detachListeners('server-api:error', errorListener);
-        reject(error);
-
-      };
-
       if ( auth ) query = _.assign({ token: this._token }, query || {});
 
-      this.ipc
-      .on('server-api:done', doneListener)
-      .on('server-api:error', errorListener)
-      .send('server-api', endpoint, method, query, body, headers);
+      this.ipc.send('server-api', [endpoint, method, query, body, headers], {
+
+        'done': (response: ServerResponse<T>) => {
+
+          if ( response.status === 200 ) resolve(response.body);
+          else reject(new Error(response.body && (<ErrorResponse><unknown>response.body).error ? `[SERVER ERROR: ${(<ErrorResponse><unknown>response.body).code}] ${(<ErrorResponse><unknown>response.body).message}` : `Server responded with status ${response.status}!`));
+
+        },
+        'error': (error: Error) => {
+
+          reject(error);
+
+        }
+
+      });
 
     });
 
@@ -157,19 +149,11 @@ export class ApiService {
   public get isAdmin(): boolean { return this._admin; }
   public get token(): string { return this._token; }
 
-  public detachListeners(channel: string, ...listeners: Function[]): void {
-
-    for ( const listener of listeners ) {
-
-      this.ipc.removeListener(channel, listener);
-
-    }
-
-  }
-
   public checkHealth(): void {
 
-    this.ipc.send('server-api', '/health');
+    this.ipc.send('server-api', ['/health'], {}, {
+      forceId: 'health-check'
+    });
 
   }
 

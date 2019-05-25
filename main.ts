@@ -4,6 +4,26 @@ import path from 'path';
 import request from 'request';
 import config from './app.config.json';
 
+interface IPCResponse {
+
+  data: any[];
+  state: string;
+  close: boolean;
+
+}
+
+interface IPCEvent {
+
+  sender: IPCSender;
+
+}
+
+interface IPCSender {
+
+  send: (channel: string, response: IPCResponse) => void;
+
+}
+
 class AppError extends Error {
 
   constructor(message: string, public code: string) {
@@ -106,113 +126,169 @@ class ElectronApp {
   private defineIPCs(): void {
 
     // Dialog for opening files (used for file upload)
-    ipcMain.on('open-files', event => {
+    ipcMain.on('open-files', (event: IPCEvent, id: string) => {
 
       this.showOpenFilesDialog()
       .then(filenames => {
 
-        event.sender.send('open-files:done', filenames);
+        event.sender.send(`open-files:${id}`, {
+          data: [filenames],
+          state: 'done',
+          close: true
+        });
 
       })
       .catch(error => {
 
-        event.sender.send('open-files:error', error);
+        event.sender.send(`open-files:${id}`, {
+          data: [error],
+          state: 'error',
+          close: true
+        });
 
       });
 
     });
 
     // Dialog for saving file (used for file download)
-    ipcMain.on('save-file', event => {
+    ipcMain.on('save-file', (event: IPCEvent, id: string) => {
 
       this.showSaveFileDialog()
       .then(filename => {
 
-        event.sender.send('save-file:done', filename);
+        event.sender.send(`save-file:${id}`, {
+          data: [filename],
+          state: 'done',
+          close: true
+        });
 
       })
       .catch(error => {
 
-        event.sender.send('save-file:error', error);
+        event.sender.send(`save-file:${id}`, {
+          data: [error],
+          state: 'error',
+          close: true
+        });
 
       });
 
     });
 
     // Dialog for saving multiple files (used for files selection download)
-    ipcMain.on('save-files', event => {
+    ipcMain.on('save-files', (event: IPCEvent, id: string) => {
 
       this.showSaveFilesDialog()
       .then(filename => {
 
-        event.sender.send('save-files:done', filename);
+        event.sender.send(`save-files:${id}`, {
+          data: [filename],
+          state: 'done',
+          close: true
+        });
 
       })
       .catch(error => {
 
-        event.sender.send('save-files:error', error);
+        event.sender.send(`save-files:${id}`, {
+          data: [error],
+          state: 'error',
+          close: true
+        });
 
       });
 
     });
 
     // For showing notifications
-    ipcMain.on('notify', (event, title: string, message: string) => {
+    ipcMain.on('notify', (event: IPCEvent, id: string, title: string, message: string) => {
 
       this.showNotification(title, message);
 
     });
 
     // For general server API usage
-    ipcMain.on('server-api', (event, endpoint: string, method: string, query: any, body: any, headers: any) => {
+    ipcMain.on('server-api', (event: IPCEvent, id: string, endpoint: string, method: string, query: any, body: any, headers: any) => {
 
       this.serverAPI(endpoint, method, query, body, headers)
       .then(response => {
 
-        event.sender.send('server-api:done', endpoint, response);
+        event.sender.send(`server-api:${id}`, {
+          data: [response],
+          state: 'done',
+          close: true
+        });
 
       })
       .catch(error => {
 
-        event.sender.send('server-api:error', endpoint, error);
+        event.sender.send(`server-api:${id}:error`, {
+          data: [error],
+          state: 'error',
+          close: true
+        });
 
       });
 
     });
 
     // For file upload
-    ipcMain.on('file-upload', (event, filename: string, size: number, token: string, remoteFilename: string) => {
+    ipcMain.on('file-upload', (event: IPCEvent, id: string, filename: string, size: number, token: string, remoteFilename: string) => {
 
-      event.sender.send('file-upload:start', filename);
+      event.sender.send(`file-upload:${id}`, {
+        data: [],
+        state: 'start',
+        close: false
+      });
 
-      this.uploadFile(filename, size, token, remoteFilename, event.sender)
+      this.uploadFile(filename, size, token, remoteFilename, event.sender, id)
       .then(response => {
 
-        event.sender.send('file-upload:done', filename, response);
+        event.sender.send(`file-upload:${id}`, {
+          data: [response],
+          state: 'done',
+          close: true
+        });
 
       })
       .catch(error => {
 
-        event.sender.send('file-upload:error', filename, error);
+        event.sender.send(`file-upload:${id}`, {
+          data: [error],
+          state: 'error',
+          close: true
+        });
 
       });
 
     });
 
     // For file download
-    ipcMain.on('file-download', (event, remoteFilename: string, filename: string, token: string) => {
+    ipcMain.on('file-download', (event: IPCEvent, id: string, remoteFilename: string, filename: string, token: string) => {
 
-      event.sender.send('file-download:start', filename);
+      event.sender.send(`file-download:${id}`, {
+        data: [],
+        state: 'start',
+        close: false
+      });
 
-      this.downloadFile(remoteFilename, filename, token, event.sender)
+      this.downloadFile(remoteFilename, filename, token, event.sender, id)
       .then(response => {
 
-        event.sender.send('file-download:done', filename, response);
+        event.sender.send(`file-download:${id}`, {
+          data: [response],
+          state: 'done',
+          close: true
+        });
 
       })
       .catch(error => {
 
-        event.sender.send('file-download:error', filename, error);
+        event.sender.send(`file-download:${id}:`, {
+          data: [error],
+          state: 'error',
+          close: true
+        });
 
       })
 
@@ -226,8 +302,7 @@ class ElectronApp {
 
     const notification = new Notification({
       title: title,
-      body: message,
-      icon: path.join(__dirname, 'dist', 'assets', 'noticon.png')
+      body: message
     });
 
     notification.show();
@@ -332,7 +407,7 @@ class ElectronApp {
 
   }
 
-  private downloadFile(remoteFilename: string, filename: string, token: string, listener: any): Promise<any> {
+  private downloadFile(remoteFilename: string, filename: string, token: string, listener: IPCSender, id: string): Promise<any> {
 
     return new Promise((resolve, reject) => {
 
@@ -364,7 +439,11 @@ class ElectronApp {
         stream.write(chunk);
 
         progress += chunk.length;
-        listener.send('file-download:progress', filename, progress);
+        listener.send(`file-download:${id}`, {
+          data: [progress],
+          state: 'progress',
+          close: false
+        });
 
       })
       .on('end', () => {
@@ -381,7 +460,7 @@ class ElectronApp {
 
   }
 
-  private uploadFile(filename: string, size: number, token: string, remoteFilename: string, listener: any): Promise<any> {
+  private uploadFile(filename: string, size: number, token: string, remoteFilename: string, listener: IPCSender, id: string): Promise<any> {
 
     return new Promise((resolve, reject) => {
 
@@ -391,7 +470,11 @@ class ElectronApp {
       .on('data', chunk => {
 
         progress += chunk.length;
-        listener.send('file-upload:progress', filename, progress);
+        listener.send(`file-upload:${id}`, {
+          data: [progress],
+          state: 'progress',
+          close: false
+        });
 
       })
       .pipe(request.post({

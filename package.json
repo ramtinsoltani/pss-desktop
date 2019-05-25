@@ -1,14 +1,31 @@
 {
   "name": "pss-desktop",
+  "description": "Personal Shared Storage Client",
   "version": "0.0.0",
+  "homepage": "https://github.com/ramtinsoltani/pss-desktop",
+  "author": {
+    "name": "Ramtin Soltani",
+    "email": "ramtinsoltani93@gmail.com"
+  },
+  "license": "UNLICENSED",
+  "repository": {
+    "url": "https://github.com/ramtinsoltani/pss-desktop"
+  },
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --prod --base-href ./ && tsc main.ts --lib 'es2018,dom' --target es5 --esModuleInterop --resolveJsonModule --outDir ./dist && npx terser --compress --mangle --toplevel --output ./dist/main.js -- ./dist/main.js",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",
-    "electron": "npx electron ./dist/main.js"
+    "electron": "npx electron ./dist/main.js",
+    "clean": "rm -rf ./dist && rm -rf ./build-linux && rm -rf ./build-win",
+    "build-web": "ng build --prod --base-href ./ && npm run main-compile && npm run main-compress",
+    "main-compile": "tsc main.ts --lib 'es2018,dom' --target es5 --esModuleInterop --resolveJsonModule --outDir ./dist",
+    "main-compress": "npx terser --compress --mangle --toplevel --output ./dist/main.js -- ./dist/main.js",
+    "build-linux": "node build build-linux",
+    "build-win": "node build build-win",
+    "build-linux-clean": "npm run clean && npm run build-web && npm run build-linux",
+    "build-win-clean": "npm run clean && npm run build-web && npm run build-win"
   },
   "main": "main.js",
   "private": true,
@@ -42,10 +59,11 @@
     "@types/jasmine": "~2.8.8",
     "@types/jasminewd2": "~2.0.3",
     "@types/lodash": "^4.14.130",
-    "@types/node": "~8.9.4",
+    "@types/node": "^12.0.2",
     "@types/request": "^2.48.1",
     "codelyzer": "~4.5.0",
     "electron": "^5.0.1",
+    "electron-builder": "^20.40.2",
     "jasmine-core": "~2.99.1",
     "jasmine-spec-reporter": "~4.2.1",
     "karma": "~4.0.0",

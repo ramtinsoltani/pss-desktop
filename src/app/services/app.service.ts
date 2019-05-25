@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ApiService } from '@app/service/api';
+import { IpcService } from '@app/service/ipc';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { FileInfo, DirectoryInfo, Queue, QueueItem, FileSelection } from '@app/model/app';
 import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse } from '@app/model/api';
@@ -24,7 +25,8 @@ export class AppService {
   public onDiskSpaceRecalcNeeded: Subject<void> = new Subject();
 
   constructor(
-    private api: ApiService
+    private api: ApiService,
+    private ipc: IpcService
   ) {
 
     this.api.onAuthenticationChanged.subscribe(authenticated => {
@@ -57,43 +59,30 @@ export class AppService {
 
     if ( this.api.disabled ) return file.subject.error(new Error('Service is disabled due to server health check!'));
 
-    const progressListener = (event, id: string, progress: number) => {
+    this.ipc.send('file-download', [file.remote, file.filename, this.api.token], {
 
-      if ( id !== file.filename ) return;
+      'start': () => {
 
-      file.subject.next(Math.floor((progress * 100) / file.size));
+        console.log(`Downloading file "${file.remote}" to "${file.filename}"`)
 
-    };
+      },
+      'progress': (progress: number) => {
 
-    const doneListener = (event, id: string) => {
+        file.subject.next(Math.floor((progress * 100) / file.size));
 
-      if ( id !== file.filename ) return;
+      },
+      'done': () => {
 
-      this.api.detachListeners('file-upload:progress', progressListener);
-      this.api.detachListeners('file-upload:done', doneListener);
-      this.api.detachListeners('file-upload:error', errorListener);
+        file.subject.complete();
 
-      file.subject.complete();
+      },
+      'error': (error: Error) => {
 
-    };
+        file.subject.error(error);
 
-    const errorListener = (event, id: string, error: Error) => {
+      }
 
-      if ( id !== file.filename ) return;
-
-      this.api.detachListeners('file-upload:progress', progressListener);
-      this.api.detachListeners('file-upload:done', doneListener);
-      this.api.detachListeners('file-upload:error', errorListener);
-
-      file.subject.error(error);
-
-    };
-
-    this.api.ipc
-    .on('file-download:progress', progressListener)
-    .on('file-download:done', doneListener)
-    .on('file-download:error', errorListener)
-    .send('file-download', file.remote, file.filename, this.api.token);
+    });
 
   }
 
@@ -101,47 +90,32 @@ export class AppService {
 
     if ( this.api.disabled ) return file.subject.error(new Error('Service is disabled due to server health check!'));
 
-    const progressListener = (event, id: string, progress: number) => {
+    this.ipc.send('file-upload', [file.filename, file.size, this.api.token, file.remote], {
 
-      if ( id !== file.filename ) return;
+      'start': () => {
 
-      file.subject.next(Math.floor((progress * 100) / file.size));
+        console.log(`Uploading file "${file.filename}" to "${file.remote}"`)
 
-    };
+      },
+      'progress': (progress: number) => {
 
-    const doneListener = (event, id: string) => {
+        file.subject.next(Math.floor((progress * 100) / file.size));
 
-      if ( id !== file.filename ) return;
+      },
+      'done': () => {
 
-      this.api.detachListeners('file-upload:progress', progressListener);
-      this.api.detachListeners('file-upload:done', doneListener);
-      this.api.detachListeners('file-upload:error', errorListener);
+        this.onDiskSpaceRecalcNeeded.next();
+        file.subject.complete();
 
-      this.onDiskSpaceRecalcNeeded.next();
+      },
+      'error': (error: Error) => {
 
-      file.subject.complete();
+        this.onDiskSpaceRecalcNeeded.next();
+        file.subject.error(error);
 
-    };
+      }
 
-    const errorListener = (event, id: string, error: Error) => {
-
-      if ( id !== file.filename ) return;
-
-      this.api.detachListeners('file-upload:progress', progressListener);
-      this.api.detachListeners('file-upload:done', doneListener);
-      this.api.detachListeners('file-upload:error', errorListener);
-
-      this.onDiskSpaceRecalcNeeded.next();
-
-      file.subject.error(error);
-
-    };
-
-    this.api.ipc
-    .on('file-upload:progress', progressListener)
-    .on('file-upload:done', doneListener)
-    .on('file-upload:error', errorListener)
-    .send('file-upload', file.filename, file.size, this.api.token, file.remote);
+    });
 
   }
 
@@ -247,6 +221,7 @@ export class AppService {
   public get currentPath(): string { return this._currentPath; }
   public get currentDirectoryInfo(): DirectoryInfo { return _.cloneDeep(this._currentDirectoryInfo); }
   public get fileSelection(): FileSelection { return _.cloneDeep(this._fileSelection); }
+  public get isReady(): BehaviorSubject<boolean> { return this.api.isReady; }
 
   public deselectAll(): void {
 
@@ -331,10 +306,12 @@ export class AppService {
 
     return new Promise((resolve, reject) => {
 
-      this.api.ipc
-      .once(`save-file${dir?'s':''}:done`, (event, filename: string) => resolve)
-      .once(`save-file${dir?'s':''}:error`, (event, error: Error) => reject)
-      .send(`save-file${dir?'s':''}`);
+      this.ipc.send(`save-file${dir?'s':''}`, [], {
+
+        'done': (filename: string) => resolve(filename),
+        'error': (error: Error) => reject(error)
+
+      });
 
     });
 
@@ -344,10 +321,12 @@ export class AppService {
 
     return new Promise((resolve, reject) => {
 
-      this.api.ipc
-      .once('open-files:done', (event, filenames: string[]) => resolve)
-      .once('open-files:error', (event, error: Error) => reject)
-      .send('open-files');
+      this.ipc.send(`open-files`, [], {
+
+        'done': (filenames: string[]) => resolve(filenames),
+        'error': (error: Error) => reject(error)
+
+      });
 
     });
 
@@ -474,7 +453,7 @@ export class AppService {
 
   public sendNotification(title: string, message: string): void {
 
-    this.api.ipc.send('notify', title, message);
+    this.ipc.send('notify', [title, message]);
 
   }
 

@@ -50,6 +50,7 @@ export class ExplorerComponent implements OnInit, OnDestroy {
     this.pathSub = this.app.onPathUpdated.subscribe(dir => {
 
       this.currentDir = dir;
+      this.detector.detectChanges();
 
     });
 
