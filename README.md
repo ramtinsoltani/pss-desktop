@@ -15,25 +15,21 @@ This is a desktop app made with Angular 7 and Electron to act as the client for 
 
 # Electron Main IPC API
 
+> **NOTE:** Use the `IpcService` to use the IPC API. The service handles automatic listener detaching, identified listeners (which avoids communication interception when multiple listeners are listening to the same event) and also introduces states for events.
+
 | Event Name | States | Arguments | Callback Arguments | Description |
 |:-----------|:------:|:---------:|:--------:|:------------|
 | open-files | `done` `error` | | `filenames` | Shows the open file dialog and returns the selected filenames or null if canceled. |
 | save-file | `done` `error` | | `filename` | Shows the save file dialog and returns the selected filename or null if canceled. |
 | save-files | `done` `error` | | `dirname` | Shows the select directory dialog and returns the selected directory name or null if canceled. |
 | notify | | `title` `message` | | Shows a system notification. |
-| server-api | `done` `error` | `endpoint` `method` `query` `body` `headers` | `endpoint` `response` | Sends a request to the server using the provided arguments and returns the response. |
-| file-upload | `start` `progress` `done` `error` | `filename` `size` `token` `remoteFilename` | `filename` `response` | Uploads a file by the given filename on the server with the remote name and returns the response. |
-| file-download | `start` `progress` `done` `error` | `remoteFilename` `filename` `token` | `filename` `response` | Downloads the specified remote file at the specified path and returns the response. |
+| server-api | `done` `error` | `endpoint` `method` `query` `body` `headers` | `response` | Sends a request to the server using the provided arguments and returns the response. |
+| file-upload | `start` `progress` `done` `error` | `filename` `size` `token` `remoteFilename` | `response` | Uploads a file by the given filename on the server with the remote name and returns the response. |
+| file-download | `start` `progress` `done` `error` | `remoteFilename` `filename` `token` | `response` | Downloads the specified remote file at the specified path and returns the response. |
 
-# Electron Renderer IPC API
+> **NOTE:** All `progress` states send the following callback arguments: `progress` (which is the total downloaded bytes.)
 
-The following events are available for the renderer process to listen to:
-
-  - `keyboard-shortcut:ctrl+a`: Fired when Ctrl+A or Command+A is pressed.
-
-> **NOTE:** All `progress` states send the following callback arguments: `filename` `progress` (which is the total downloaded bytes.)
-
-> **NOTE:** All `error` states send the the `error` object (and some send the `filename` as an identifier if `filename` is normally sent in the `done` state.)
+> **NOTE:** All `error` states send the the `error` object.
 
 # Angular Directives
 
