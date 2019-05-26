@@ -11,6 +11,7 @@ import {
 import { BehaviorSubject, Subject } from 'rxjs';
 import { IpcService } from '@app/service/ipc';
 import _ from 'lodash';
+import { AppError } from '@app/common/error';
 
 @Injectable({
   providedIn: 'root'
@@ -129,12 +130,27 @@ export class ApiService {
         'done': (response: ServerResponse<T>) => {
 
           if ( response.status === 200 ) resolve(response.body);
-          else reject(new Error(response.body && (<ErrorResponse><unknown>response.body).error ? `[SERVER ERROR: ${(<ErrorResponse><unknown>response.body).code}] ${(<ErrorResponse><unknown>response.body).message}` : `Server responded with status ${response.status}!`));
+          else {
+
+            if ( response.body && (<ErrorResponse><unknown>response.body).error ) {
+
+              const error: ErrorResponse = <ErrorResponse><unknown>response.body;
+
+              reject(new AppError(error.message, error.code));
+
+            }
+            else {
+
+              reject(new AppError(`Server responded with status ${response.status}!`, 'SERVER_ERROR'));
+
+            }
+
+          }
 
         },
-        'error': (error: Error) => {
+        'error': (error: any) => {
 
-          reject(error);
+          reject(new AppError(error.message, error.code || 'UNKNOWN_ERROR'));
 
         }
 

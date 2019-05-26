@@ -1,4 +1,5 @@
 import { Component, ChangeDetectorRef, OnInit, HostListener } from '@angular/core';
+import { style, state, animate, transition, trigger } from '@angular/animations';
 import { NgForm } from '@angular/forms';
 import { AppService } from '@app/service/app';
 import { FileInfo } from '@app/model/app';
@@ -6,11 +7,20 @@ import { FileInfo } from '@app/model/app';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+  styleUrls: ['./app.component.scss'],
+  animations: [
+    trigger('vsqueeze', [
+      state('void', style({
+        height: '0px'
+      })),
+      transition('void <=> *', animate(100))
+    ])
+  ]
 })
 export class AppComponent implements OnInit {
 
   public showLogin: boolean = false;
+  public loginError: string = null;
 
   @HostListener('body:click')
   public onBodyClick() {
@@ -73,8 +83,15 @@ export class AppComponent implements OnInit {
 
     if ( form.invalid ) return;
 
+    this.loginError = null;
+
     this.app.login(form.value.username, form.value.password)
-    .catch(console.error);
+    .catch(error => {
+
+      this.loginError = error.message;
+      console.error(error);
+
+    });
 
   }
 

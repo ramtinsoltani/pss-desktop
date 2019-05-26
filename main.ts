@@ -211,7 +211,7 @@ class ElectronApp {
       })
       .catch(error => {
 
-        event.sender.send(`server-api:${id}:error`, {
+        event.sender.send(`server-api:${id}`, {
           data: [error],
           state: 'error',
           close: true
@@ -273,7 +273,7 @@ class ElectronApp {
       })
       .catch(error => {
 
-        event.sender.send(`file-download:${id}:`, {
+        event.sender.send(`file-download:${id}`, {
           data: [error],
           state: 'error',
           close: true

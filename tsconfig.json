@@ -24,7 +24,8 @@
       "@app/service/*": ["src/app/services/*.service"],
       "@app/model/*": ["src/app/models/*.model"],
       "@app/component": ["src/app/components"],
-      "@app/directive/*": ["src/app/directives/*.directive"]
+      "@app/directive/*": ["src/app/directives/*.directive"],
+      "@app/common/*": ["src/app/common/*"]
     }
   }
 }

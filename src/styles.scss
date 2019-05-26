@@ -132,3 +132,14 @@ input[type="number"] {
     color: map-get($colors, gray-medium);
   }
 }
+
+p.msg-error {
+  background-color: map-get($colors, error);
+  color: map-get($colors, gray-lighter);
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  text-align: center;
+  margin: -30px -20px 0 -20px !important;
+}

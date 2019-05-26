@@ -7,6 +7,7 @@
   <form #f="ngForm" (ngSubmit)="login(f)">
     <div class="modal-header">Login</div>
     <div class="modal-body">
+      <p @vsqueeze *ngIf="loginError" class="msg-error">{{ loginError }}</p>
       <p>Please login to your account to access the shared cloud.</p>
         <input class="block" placeholder="Username" name="username" type="text" required ngModel minlength="6" maxlength="32">
         <input class="block" placeholder="Password" name="password" type="password" required ngModel minlength="8" maxlength="64">
