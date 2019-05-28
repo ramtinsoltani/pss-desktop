@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import request from 'request';
 import config from './app.config.json';
+import { Subject } from 'rxjs';
 
 interface IPCResponse {
 
@@ -42,6 +43,7 @@ class AppError extends Error {
 class ElectronApp {
 
   private window: BrowserWindow;
+  private onKilled: Subject<void> = new Subject();
 
   constructor(private config: any) {
 
@@ -97,6 +99,8 @@ class ElectronApp {
 
     // Quit when all windows are closed.
     app.on('window-all-closed', () => {
+
+      this.onKilled.next();
 
       // On macOS specific close process
       if ( process.platform !== 'darwin' ) app.quit();
@@ -403,15 +407,15 @@ class ElectronApp {
       let progress: number = 0;
       let stream: fs.WriteStream = null;
 
-      request.get({
-        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs/${remoteFilename}`,
+      const r = request.get({
+        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs${remoteFilename}`,
         qs: { token: token }
       })
       .on('response', response => {
 
         if ( response.statusCode !== 200 ) {
 
-          reject({ status: response.statusCode });
+          reject({ status: response.statusCode, message: response.body ? response.body.message : undefined });
 
         }
         else {
@@ -445,6 +449,13 @@ class ElectronApp {
       })
       .on('error', reject);
 
+      const sub = this.onKilled.subscribe(() => {
+
+        sub.unsubscribe();
+        r.abort();
+
+      });
+
     });
 
   }
@@ -454,8 +465,16 @@ class ElectronApp {
     return new Promise((resolve, reject) => {
 
       let progress: number = 0;
+      const r = request.post({
+        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs/${remoteFilename}`,
+        qs: { token: token },
+        headers: {
+          'Content-Length': size,
+          'Content-Type': 'application/octet-stream'
+        }
+      });
 
-      fs.createReadStream(filename, { highWaterMark: 500 })
+      fs.createReadStream(filename)
       .on('data', chunk => {
 
         progress += chunk.length;
@@ -466,14 +485,7 @@ class ElectronApp {
         });
 
       })
-      .pipe(request.post({
-        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs/${remoteFilename}`,
-        qs: { token: token },
-        headers: {
-          'Content-Length': size,
-          'Content-Type': 'application/octet-stream'
-        }
-      }))
+      .pipe(r)
       .on('response', response => {
 
         if ( response.statusCode !== 200 ) return reject({ status: response.statusCode });
@@ -485,6 +497,13 @@ class ElectronApp {
 
       })
       .on('error', reject);
+
+      const sub = this.onKilled.subscribe(() => {
+
+        sub.unsubscribe();
+        r.abort();
+
+      });
 
     });
 

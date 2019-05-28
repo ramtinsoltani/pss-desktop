@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { ApiService } from '@app/service/api';
 import { IpcService } from '@app/service/ipc';
 import { BehaviorSubject, Subject } from 'rxjs';
-import { FileInfo, DirectoryInfo, Queue, QueueItem, FileSelection } from '@app/model/app';
+import { FileInfo, DirectoryInfo, Queue, QueueItem, FileSelection, QueueInfo } from '@app/model/app';
 import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse } from '@app/model/api';
 import _ from 'lodash';
 
@@ -24,6 +24,8 @@ export class AppService {
   public onSelectionChanged: BehaviorSubject<FileSelection> = new BehaviorSubject(this.fileSelection);
   public onDiskSpaceRecalcNeeded: Subject<void> = new Subject();
   public isWindowFocused: boolean = true;
+  public onDownloadQueueUpdated: Subject<QueueInfo> = new Subject();
+  public onUploadQueueUpdated: Subject<QueueInfo> = new Subject();
 
   constructor(
     private api: ApiService,
@@ -64,22 +66,42 @@ export class AppService {
 
       'start': () => {
 
-        console.log(`Downloading file "${file.remote}" to "${file.filename}"`)
+        console.log(`Downloading file "${file.remote}" to "${file.filename}"`);
+        this.onDownloadQueueUpdated.next({
+          path: file.remote,
+          progress: 0,
+          done: false
+        });
 
       },
       'progress': (progress: number) => {
 
         file.subject.next(Math.floor((progress * 100) / file.size));
+        this.onDownloadQueueUpdated.next({
+          path: file.remote,
+          progress: Math.floor((progress * 100) / file.size),
+          done: false
+        });
 
       },
       'done': () => {
 
         file.subject.complete();
+        this.onDownloadQueueUpdated.next({
+          path: file.remote,
+          progress: 100,
+          done: true
+        });
 
       },
       'error': (error: Error) => {
 
         file.subject.error(error);
+        this.onDownloadQueueUpdated.next({
+          path: file.remote,
+          progress: 100,
+          done: true
+        });
 
       }
 
@@ -95,24 +117,48 @@ export class AppService {
 
       'start': () => {
 
-        console.log(`Uploading file "${file.filename}" to "${file.remote}"`)
+        console.log(`Uploading file "${file.filename}" to "${file.remote}"`);
+        this.onUploadQueueUpdated.next({
+          path: file.remote,
+          progress: 0,
+          done: false
+        });
 
       },
       'progress': (progress: number) => {
 
         file.subject.next(Math.floor((progress * 100) / file.size));
+        this.onUploadQueueUpdated.next({
+          path: file.remote,
+          progress: ((progress * 100) / file.size),
+          done: false
+        });
 
       },
       'done': () => {
 
         this.onDiskSpaceRecalcNeeded.next();
+
         file.subject.complete();
+
+        this.onUploadQueueUpdated.next({
+          path: file.remote,
+          progress: 100,
+          done: true
+        });
 
       },
       'error': (error: Error) => {
 
         this.onDiskSpaceRecalcNeeded.next();
+
         file.subject.error(error);
+
+        this.onUploadQueueUpdated.next({
+          path: file.remote,
+          progress: 100,
+          done: true
+        });
 
       }
 
@@ -133,12 +179,19 @@ export class AppService {
 
     const file = this._downloadQueue.shift();
 
-    const sub = file.subject.subscribe(null, null, () => {
+    const sub = file.subject.subscribe(
+      null,
+      () => {
 
-      sub.unsubscribe();
-      this.executeDownloadQueue();
+        sub.unsubscribe();
 
-    });
+      }, () => {
+
+        sub.unsubscribe();
+        this.executeDownloadQueue();
+
+      }
+    );
 
     this.downloadFile(file);
 
@@ -157,12 +210,19 @@ export class AppService {
 
     const file = this._uploadQueue.shift();
 
-    const sub = file.subject.subscribe(null, null, () => {
+    const sub = file.subject.subscribe(
+      null,
+      () => {
 
-      sub.unsubscribe();
-      this.executeUploadQueue();
+        sub.unsubscribe();
 
-    });
+      }, () => {
+
+        sub.unsubscribe();
+        this.executeUploadQueue();
+
+      }
+    );
 
     this.uploadFile(file);
 
@@ -371,7 +431,7 @@ export class AppService {
 
     return new Promise((resolve, reject) => {
 
-      path = `/${path}`.replace(/\/+/g, '/');
+      path = `/${path}`.replace(/\.\/+/g, '').replace(/\/+/g, '/').replace(/\.$/, '');
 
       this.api.server<DirectoryInfoResponse>(`/fs${path}`, 'get')
       .then(response => {

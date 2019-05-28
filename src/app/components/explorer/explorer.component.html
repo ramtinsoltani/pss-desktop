@@ -1,4 +1,11 @@
 <ng-template [ngIf]="currentDir">
+  <ng-container *ngFor="let path of getUploads()">
+    <div *ngIf="belongsToCurrentDir(path)" class="child upload">
+      <fa-icon [icon]="getTypeIcon(getFilename(uploadInfo[path].path))" size="sm"></fa-icon>
+      <span class="filename">{{ getFilename(uploadInfo[path].path) }}</span>
+      <app-progress-bar [progress]="uploadInfo[path].progress" progress-color="#47ec6b"></app-progress-bar>
+    </div>
+  </ng-container>
   <div
   *ngFor="let child of currentDir.children; let index = index"
   class="child"
@@ -7,5 +14,6 @@
   (dblclick)="openDir($event, child.name)">
     <fa-icon [icon]="child.name ? 'folder' : getTypeIcon(child.filename)" size="sm"></fa-icon>
     <span class="filename">{{ child.name || child.filename }}</span>
+    <app-progress-bar *ngIf="downloadInfo[child.path]" [progress]="downloadInfo[child.path].progress"></app-progress-bar>
   </div>
 </ng-template>

@@ -1,7 +1,9 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { AppService } from '@app/service/app';
-import { DirectoryInfo, FileSelection } from '@app/model/app';
+import { DirectoryInfo, FileSelection, QueueInfo } from '@app/model/app';
 import { Subscription } from 'rxjs';
+import _ from 'lodash';
+import path from 'path';
 
 @Component({
   selector: 'app-explorer',
@@ -12,9 +14,14 @@ export class ExplorerComponent implements OnInit, OnDestroy {
 
   private pathSub: Subscription;
   private selectionSub: Subscription;
+  private downloadSub: Subscription;
+  private uploadSub: Subscription;
+  private detectionInterval: NodeJS.Timeout;
 
   public currentDir: DirectoryInfo;
   public selection: FileSelection;
+  public downloadInfo: { [path: string]: QueueInfo } = {};
+  public uploadInfo: { [remote: string]: QueueInfo } = {};
 
   constructor(
     private app: AppService,
@@ -36,6 +43,62 @@ export class ExplorerComponent implements OnInit, OnDestroy {
       this.detector.detectChanges();
 
     });
+
+    this.downloadSub = this.app.onDownloadQueueUpdated.subscribe(info => {
+
+      if ( ! info.done ) {
+
+        this.downloadInfo[info.path] = info;
+        clearInterval(this.detectionInterval);
+        this.detectionInterval = setInterval(() => this.detector.detectChanges(), 100);
+
+      }
+      else {
+
+        delete this.downloadInfo[info.path];
+        clearInterval(this.detectionInterval);
+        this.detectionInterval = undefined;
+
+      }
+
+    });
+
+    this.uploadSub = this.app.onUploadQueueUpdated.subscribe(info => {
+
+      if ( ! info.done ) {
+
+        this.uploadInfo[info.path] = info;
+        clearInterval(this.detectionInterval);
+        this.detectionInterval = setInterval(() => this.detector.detectChanges(), 100);
+
+      }
+      else {
+
+        delete this.uploadInfo[info.path];
+        clearInterval(this.detectionInterval);
+        this.detectionInterval = undefined;
+
+      }
+
+    });
+
+  }
+
+  public getUploads(): string[] {
+
+    return _.keys(this.uploadInfo);
+
+  }
+
+  public getFilename(remote: string): string {
+
+    return path.basename(remote);
+
+  }
+
+  public belongsToCurrentDir(remote: string): boolean {
+
+    return path.dirname(remote).replace(/\/*$/, '') === this.app.currentPath.replace(/\/*$/, '');
 
   }
 
@@ -188,6 +251,10 @@ export class ExplorerComponent implements OnInit, OnDestroy {
 
     if ( this.pathSub && ! this.pathSub.closed ) this.pathSub.unsubscribe();
     if ( this.selectionSub && ! this.selectionSub.closed ) this.selectionSub.unsubscribe();
+    if ( this.downloadSub && ! this.downloadSub.closed ) this.downloadSub.unsubscribe();
+    if ( this.uploadSub && ! this.uploadSub.closed ) this.uploadSub.unsubscribe();
+
+    clearInterval(this.detectionInterval);
 
   }
 

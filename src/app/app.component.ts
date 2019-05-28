@@ -3,6 +3,8 @@ import { style, state, animate, transition, trigger } from '@angular/animations'
 import { NgForm } from '@angular/forms';
 import { AppService } from '@app/service/app';
 import { FileInfo } from '@app/model/app';
+import { DropzoneEvent } from '@app/directive/dropzone';
+import path from 'path';
 
 @Component({
   selector: 'app-root',
@@ -92,6 +94,40 @@ export class AppComponent implements OnInit {
       console.error(error);
 
     });
+
+  }
+
+  public refreshAfterFileUploadIfNecessary(remote: string): void {
+
+    if ( path.dirname(remote).replace(/\/*$/, '') !== this.app.currentPath.replace(/\/*$/, '') ) return;
+
+    this.app.cd('.')
+    .catch(console.error);
+
+  }
+
+  public onFileDrop(files: DropzoneEvent): void {
+
+    const oldCurrentPath = this.app.currentPath;
+
+    for ( const file of files ) {
+
+      const sub = this.app.upload(file.path, file.size, path.join(oldCurrentPath, file.filename)).subscribe(
+        null,
+        error => {
+          this.app.sendNotification('File upload', `File "${file.filename}" has failed to upload!`);
+          console.error(error);
+          sub.unsubscribe();
+          this.refreshAfterFileUploadIfNecessary(path.join(oldCurrentPath, file.filename));
+        },
+        () => {
+          this.app.sendNotification('File upload', `File "${file.filename}" was successfully uploaded.`);
+          sub.unsubscribe();
+          this.refreshAfterFileUploadIfNecessary(path.join(oldCurrentPath, file.filename));
+        }
+      );
+
+    }
 
   }
 

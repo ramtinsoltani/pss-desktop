@@ -13,6 +13,9 @@ export class ProgressBarComponent {
   @Input('progress-threshold')
   public threshold: number = null;
 
+  @Input('progress-color')
+  public color: string;
+
   constructor() { }
 
 }

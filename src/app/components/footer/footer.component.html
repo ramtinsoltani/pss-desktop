@@ -1,3 +1,10 @@
 <fa-icon icon="hdd" size="lg" [fixedWidth]="true"></fa-icon>
 <app-progress-bar [progress]="usedSpaceRatio" [progress-threshold]="80"></app-progress-bar>
 <span class="space-info">{{ freeSpace }} / {{ totalSpace }} GB</span>
+<div *ngIf="selectionCount" class="download-button">
+  <div class="download-info">
+    <span class="download-title">{{ downloadTitle }}</span>
+    <span class="download-subtitle">{{ getSelectionSizeLabel() }}</span>
+  </div>
+  <fa-icon icon="arrow-alt-circle-down" (click)="downloadSelection($event)"></fa-icon>
+</div>

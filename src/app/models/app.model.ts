@@ -16,6 +16,14 @@ export interface FileSelection {
 
 }
 
+export interface QueueInfo {
+
+  path: string;
+  progress: number;
+  done: boolean;
+
+}
+
 export type Queue = Array<QueueItem>;
 export type DirectoryInfo = DirectoryInfoResponse;
 export type FileInfo = FileInfoResponse;

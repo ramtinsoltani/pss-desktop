@@ -12,7 +12,7 @@
 }
 
 span.space-info {
-  font-size: 10px;
+  font-size: 12px;
   margin-left: 10px;
   white-space: nowrap;
   overflow: hidden;
@@ -22,4 +22,31 @@ span.space-info {
 app-progress-bar {
   margin-left: 20px;
   width: 100px;
+}
+
+.download-button {
+  display: flex;
+  margin-left: auto;
+  fa-icon {
+    font-size: 28px;
+    color: map-get($colors, accent);
+    margin-left: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  .download-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    .download-title {
+      font-size: 14px;
+      color: map-get($colors, accent);
+    }
+    .download-subtitle {
+      margin-top: 5px;
+      font-size: 12px;
+      color: map-get($colors, gray-dark);
+    }
+  }
 }

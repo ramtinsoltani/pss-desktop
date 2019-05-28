@@ -93,10 +93,10 @@ This component also defines three sections inside its content: `modal-header`, `
 
 ## Progress Bar Component
 
-The `app-progress-bar` component is used whenever a progress bar is needed. It defines two attributes, one required attribute named `progress` which takes in the progress percentage (number only) and one optional attribute named `progress-threshold` which takes in a percentage threshold (number only) at which the progress bar turns red (defaults to `null`).
+The `app-progress-bar` component is used whenever a progress bar is needed. It defines three attributes, one required attribute named `progress` which takes in the progress percentage (number only) and two optional attributes named `progress-threshold` which takes in a percentage threshold (number only) at which the progress bar turns red (defaults to `null`) and `progress-color` which overrides the default progress bar color.
 
 **Example:**
 
 ```html
-<app-progress-bar [progress]="50" [progress-threshold]="80"></app-progress-bar>
+<app-progress-bar [progress]="50" [progress-threshold]="80" progress-color="green"></app-progress-bar>
 ```
