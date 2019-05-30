@@ -93,6 +93,11 @@ export class AppComponent implements OnInit {
       this.loginError = error.message;
       console.error(error);
 
+    })
+    .finally(() => {
+
+      form.reset();
+
     });
 
   }

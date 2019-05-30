@@ -132,6 +132,12 @@ export class ApiService {
           if ( response.status === 200 ) resolve(response.body);
           else {
 
+            if ( response.status === 401 ) {
+
+              this.invalidateAuth();
+
+            }
+
             if ( response.body && (<ErrorResponse><unknown>response.body).error ) {
 
               const error: ErrorResponse = <ErrorResponse><unknown>response.body;
@@ -233,10 +239,7 @@ export class ApiService {
       })
       .catch(error => {
 
-        this._token = null;
-        this._username = null;
-        this._admin = false;
-        this.onAuthenticationChanged.next(false);
+        this.invalidateAuth();
 
         reject(error);
 
@@ -255,10 +258,7 @@ export class ApiService {
       this.server<MessageResponse>('/auth/logout', 'post')
       .then(response => {
 
-        this._token = null;
-        this._username = null;
-        this._admin = false;
-        this.onAuthenticationChanged.next(false);
+        this.invalidateAuth();
 
         console.log(response.message);
 
@@ -285,11 +285,7 @@ export class ApiService {
 
         if ( username === this._username ) {
 
-          this._token = null;
-          this._username = null;
-          this._admin = false;
-
-          this.onAuthenticationChanged.next(false);
+          this.invalidateAuth();
 
         }
 
@@ -367,6 +363,15 @@ export class ApiService {
       .catch(reject);
 
     });
+
+  }
+
+  public invalidateAuth(): void {
+
+    this._token = null;
+    this._username = null;
+    this._admin = false;
+    this.onAuthenticationChanged.next(false);
 
   }
 

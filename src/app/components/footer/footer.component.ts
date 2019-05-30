@@ -19,6 +19,7 @@ export class FooterComponent implements OnInit, OnDestroy {
   public freeSpace: number = 0;
   public totalSpace: number = 0;
   public usedSpaceRatio: number = 0;
+  public usedSpace: number = 0;
   public selection: FileSelection = {};
   public selectionCount: number = 0;
   public downloadTitle: string = '';
@@ -36,6 +37,7 @@ export class FooterComponent implements OnInit, OnDestroy {
 
       this.freeSpace = Math.floor(info.free / (1000 * 1000 * 1000));
       this.totalSpace = Math.floor(info.total / (1000 * 1000 * 1000));
+      this.usedSpace = Math.floor((info.total - info.free) / (1000 * 1000 * 1000));
       this.usedSpaceRatio = Math.floor(((info.total - info.free) * 100) / info.total);
       this.detector.detectChanges();
 

@@ -3,7 +3,7 @@ import { ApiService } from '@app/service/api';
 import { IpcService } from '@app/service/ipc';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { FileInfo, DirectoryInfo, Queue, QueueItem, FileSelection, QueueInfo } from '@app/model/app';
-import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse } from '@app/model/api';
+import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse, ErrorResponse } from '@app/model/api';
 import _ from 'lodash';
 
 @Injectable({
@@ -94,7 +94,13 @@ export class AppService {
         });
 
       },
-      'error': (error: Error) => {
+      'error': (error: any) => {
+
+        if ( error.status === 401 ) {
+
+          this.api.invalidateAuth();
+
+        }
 
         file.subject.error(error);
         this.onDownloadQueueUpdated.next({
@@ -148,9 +154,18 @@ export class AppService {
         });
 
       },
-      'error': (error: Error) => {
+      'error': (error: any) => {
 
-        this.onDiskSpaceRecalcNeeded.next();
+        if ( error.status === 401 ) {
+
+          this.api.invalidateAuth();
+
+        }
+        else {
+
+          this.onDiskSpaceRecalcNeeded.next();
+
+        }
 
         file.subject.error(error);
 
@@ -184,6 +199,8 @@ export class AppService {
       () => {
 
         sub.unsubscribe();
+        this._downloadQueue = [];
+        this._downloading = false;
 
       }, () => {
 
@@ -215,6 +232,8 @@ export class AppService {
       () => {
 
         sub.unsubscribe();
+        this._uploadQueue = [];
+        this._uploading = false;
 
       }, () => {
 
@@ -431,9 +450,10 @@ export class AppService {
 
     return new Promise((resolve, reject) => {
 
-      path = `/${path}`.replace(/\.\/+/g, '').replace(/\/+/g, '/').replace(/\.$/, '');
+    path = `/${path}`.replace(/\.\/+/g, '').replace(/\/+/g, '/').replace(/\.$/, '').replace(/\/$/, '');
 
-      this.api.server<DirectoryInfoResponse>(`/fs${path}`, 'get')
+
+      this.api.server<DirectoryInfoResponse>(`/fs/${path}`, 'get')
       .then(response => {
 
         this._currentPath = path;
@@ -458,7 +478,7 @@ export class AppService {
 
   public cdBack(): Promise<void> {
 
-    if ( this._currentPath === '/' ) return Promise.reject(new Error('Cannot cd back from root!'));
+    if ( this._currentPath === '' ) return Promise.reject(new Error('Cannot cd back from root!'));
 
     return this.cdAbsolute(this._currentPath.replace(/\/+$/, '').replace(/[^\/]+$/, ''));
 

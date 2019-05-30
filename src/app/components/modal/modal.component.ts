@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewEncapsulation, Input, ChangeDetectorRef } from '@angular/core';
+import { Component, ViewEncapsulation, OnInit, Input, Output, EventEmitter, Renderer2 } from '@angular/core';
 import { style, state, animate, transition, trigger } from '@angular/animations';
 
 @Component({
@@ -17,26 +17,29 @@ import { style, state, animate, transition, trigger } from '@angular/animations'
 })
 export class ModalComponent implements OnInit {
 
-  @Input('modal-close')
-  public closeButton: HTMLButtonElement;
+  @Input('modal-show')
+  public modalVisible: boolean = false;
 
-  @Input('modal-hidden')
-  public hidden: boolean = false;
+  @Input('modal-close')
+  public modalCloseButton: HTMLElement;
+
+  @Output('modal-closed')
+  public onModalClosed: EventEmitter<void> = new EventEmitter();
 
   constructor(
-    private detector: ChangeDetectorRef
+    private renderer: Renderer2
   ) { }
 
   ngOnInit() {
 
-    if ( ! this.closeButton ) return;
+    if ( ! this.modalCloseButton ) return;
 
-    this.closeButton.onclick = () => {
+    this.renderer.listen(this.modalCloseButton, 'click', () => {
 
-      this.hidden = true;
-      this.detector.detectChanges();
+      this.modalVisible = false;
+      this.onModalClosed.emit();
 
-    };
+    });
 
   }
 

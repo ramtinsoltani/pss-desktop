@@ -3,7 +3,7 @@
   <app-explorer (dropzone)="onFileDrop($event)"></app-explorer>
   <app-footer></app-footer>
 </ng-template>
-<app-modal [modal-hidden]="! showLogin">
+<app-modal [modal-show]="showLogin">
   <form #f="ngForm" (ngSubmit)="login(f)">
     <div class="modal-header">Login</div>
     <div class="modal-body">

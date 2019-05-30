@@ -71,14 +71,14 @@ The following components are available...
 
 ## Modal Component
 
-The `app-modal` component is used to show content in a modal. It defines two optional attributes for controlling the visibility state of the modal: the boolean `modal-hidden` attribute and the element ref `modal-close` attribute which takes template reference and attaches a handler to its `onclose` event for closing the modal on click.
+The `app-modal` component is used to show content in a modal. It defines two optional attributes for controlling the visibility state of the modal: the boolean `modal-show` attribute and the element ref `modal-close` attribute which takes template reference and attaches a handler to its `click` event for closing the modal on click. It also defines an event called `modal-closed` which is emitted every time the modal is closed.
 
 This component also defines three sections inside its content: `modal-header`, `modal-body`, and `modal-footer`.
 
 **Example:**
 
 ```html
-<app-modal [(modal-hidden)]="modalHidden" [modal-close]="closeButton">
+<app-modal [modal-show]="showModal" [modal-close]="closeButton" (modal-closed)="onModalClosed()">
   <div class="modal-header">
     Modal Title
   </div>

@@ -12,8 +12,56 @@
   [ngClass]="{ selected: child.filename && selection && selection[child.filename] }"
   (click)="selectChild($event, child.filename)"
   (dblclick)="openDir($event, child.name)">
+    <fa-icon class="more" icon="ellipsis-v" (click)="showFileInfo(index, $event)"></fa-icon>
     <fa-icon [icon]="child.name ? 'folder' : getTypeIcon(child.filename)" size="sm"></fa-icon>
     <span class="filename">{{ child.name || child.filename }}</span>
     <app-progress-bar *ngIf="downloadInfo[child.path]" [progress]="downloadInfo[child.path].progress"></app-progress-bar>
   </div>
+  <app-modal *ngIf="currentDir.children.length" [modal-show]="showInfoModal" [modal-close]="modalCloseButton" (modal-closed)="onInfoModalClosed()">
+    <div class="modal-header">
+      File Info
+    </div>
+    <div class="modal-body" *ngIf="infoIndex !== null">
+      <div *ngIf="! isDirectory(infoIndex)" class="info-group">
+        <span class="info-title">Name</span>
+        <span class="info-value info-value-important">{{ currentDir.children[infoIndex].filename }}</span>
+      </div>
+      <div *ngIf="isDirectory(infoIndex)" class="info-group">
+        <span class="info-title">Name</span>
+        <span class="info-value info-value-important">{{ currentDir.children[infoIndex].name }}</span>
+      </div>
+      <div class="info-group">
+        <span class="info-title">Path</span>
+        <span class="info-value">{{ currentDir.children[infoIndex].path }}</span>
+      </div>
+      <div *ngIf="! isDirectory(infoIndex)" class="info-group">
+        <span class="info-title">Created</span>
+        <span class="info-value">{{ currentDir.children[infoIndex].created | date:'short' }}</span>
+      </div>
+      <div *ngIf="! isDirectory(infoIndex)" class="info-group">
+        <span class="info-title">Last Modified</span>
+        <span class="info-value">{{ currentDir.children[infoIndex].modified | date:'short' }}</span>
+      </div>
+      <div *ngIf="! isDirectory(infoIndex)" class="info-group">
+        <span class="info-title">Size</span>
+        <span class="info-value">{{ getSizeLabel(currentDir.children[infoIndex].size) }}</span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-danger btn-block" (click)="deletePath(currentDir.children[infoIndex].path)"><fa-icon icon="trash"></fa-icon>Delete</button>
+      <button type="button" class="btn btn-secondary btn-block" #modalCloseButton>Close</button>
+    </div>
+  </app-modal>
+  <app-modal [modal-show]="showDeleteAlert" [modal-close]="modalCloseButton2" (modal-closed)="onDeleteModalClosed()">
+    <div class="modal-header">
+      Deletion Confirmation
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete {{ deletionCount }} file{{ deletionCount > 1 ? 's' : '' }}?</p>
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="btn btn-danger btn-block" (click)="onDeleteModalConfirmed()">Confirm</button>
+      <button type="button" class="btn btn-primary btn-block" #modalCloseButton2>Cancel</button>
+    </div>
+  </app-modal>
 </ng-template>

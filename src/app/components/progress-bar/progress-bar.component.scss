@@ -10,10 +10,11 @@
 }
 
 .bar {
+  width: 0px;
   height: 100%;
   background-color: map-get($colors, accent);
   border-radius: 30px;
-  transition: background-color .2s ease-in-out;
+  transition: background-color .2s ease-in-out, width .2s ease-in-out;
   &.red {
     background-color: map-get($colors, error);
   }

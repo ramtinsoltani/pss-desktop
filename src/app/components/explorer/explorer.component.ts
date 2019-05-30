@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { AppService } from '@app/service/app';
 import { DirectoryInfo, FileSelection, QueueInfo } from '@app/model/app';
 import { Subscription } from 'rxjs';
@@ -22,6 +22,22 @@ export class ExplorerComponent implements OnInit, OnDestroy {
   public selection: FileSelection;
   public downloadInfo: { [path: string]: QueueInfo } = {};
   public uploadInfo: { [remote: string]: QueueInfo } = {};
+  public showInfoModal: boolean = false;
+  public infoIndex: number = null;
+  public showDeleteAlert: boolean = false;
+  public deleting: boolean = false;
+  public deletionCount: number = 0;
+
+  @HostListener('window:keydown', ['$event'])
+  public onKeyDown(event: KeyboardEvent) {
+
+    if ( event.key !== 'Delete' || this.deleting || ! _.keys(this.selection).length ) return;
+
+    this.deletionCount = _.keys(this.selection).length;
+    this.deleting = true;
+    this.showDeleteAlert = true;
+
+  }
 
   constructor(
     private app: AppService,
@@ -58,6 +74,7 @@ export class ExplorerComponent implements OnInit, OnDestroy {
         delete this.downloadInfo[info.path];
         clearInterval(this.detectionInterval);
         this.detectionInterval = undefined;
+        this.detector.detectChanges();
 
       }
 
@@ -77,8 +94,107 @@ export class ExplorerComponent implements OnInit, OnDestroy {
         delete this.uploadInfo[info.path];
         clearInterval(this.detectionInterval);
         this.detectionInterval = undefined;
+        this.detector.detectChanges();
 
       }
+
+    });
+
+  }
+
+  public showFileInfo(index: number, event: MouseEvent): void {
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    this.infoIndex = index;
+    this.showInfoModal = true;
+
+    this.detector.detectChanges();
+
+  }
+
+  public onInfoModalClosed(): void {
+
+    this.showInfoModal = false;
+
+  }
+
+  public onDeleteModalClosed(): void {
+
+    this.showDeleteAlert = false;
+    this.deleting = false;
+
+  }
+
+  public onDeleteModalConfirmed(): void {
+
+    this.showDeleteAlert = false;
+    const promises: Promise<void>[] = [];
+    const currentPathLocked = this.app.currentPath;
+
+    for ( const filename in this.selection ) {
+
+      promises.push(this.app.rm(path.join(this.app.currentPath, filename)));
+
+    }
+
+    Promise.all(promises)
+    .then(() => this.app.sendNotification('File Deletion', `${this.deletionCount} file${this.deletionCount > 1 ? 's' : ''} have been successfully deleted.`))
+    .catch(error => {
+
+      this.app.sendNotification('File Deletion', 'File deletion failed due to an error!');
+      console.error(error);
+
+    })
+    .finally(() => {
+
+      this.deleting = false;
+      this.refreshAfterFileDeletionIfNecessary(path.join(currentPathLocked, 'dummy.txt'));
+
+    });
+
+  }
+
+  public getSizeLabel(size: number): string {
+
+    if ( size < 1000 ) return `${size} Bytes`;
+
+    size = +(size / 1000).toFixed(2);
+
+    if ( size < 1000 ) return `${size} KB`;
+
+    size = +(size / 1000).toFixed(2);
+
+    if ( size < 1000 ) return `${size} MB`;
+
+    size = +(size / 1000).toFixed(2);
+
+    return `${size} GB`;
+
+  }
+
+  public isDirectory(index: number): boolean {
+
+    return this.currentDir.children[index].hasOwnProperty('name');
+
+  }
+
+  public deletePath(_path: string): void {
+
+    this.onInfoModalClosed();
+
+    this.app.rm(_path)
+    .then(() => {
+
+      this.refreshAfterFileDeletionIfNecessary(_path);
+      this.app.sendNotification('Path Deletion', `Path "${_path}" was successfully deleted.`);
+
+    })
+    .catch(error => {
+
+      this.app.sendNotification('Path Deletion', `Path "${_path}" could not be deleted due to an error!`);
+      console.error(error);
 
     });
 
@@ -244,6 +360,15 @@ export class ExplorerComponent implements OnInit, OnDestroy {
         return 'file';
 
     }
+
+  }
+
+  private refreshAfterFileDeletionIfNecessary(remote: string): void {
+
+    if ( path.dirname(remote).replace(/\/*$/, '') !== this.app.currentPath.replace(/\/*$/, '') ) return;
+
+    this.app.cd('.')
+    .catch(console.error);
 
   }
 
