@@ -3,7 +3,8 @@ import { ApiService } from '@app/service/api';
 import { IpcService } from '@app/service/ipc';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { FileInfo, DirectoryInfo, Queue, QueueItem, FileSelection, QueueInfo } from '@app/model/app';
-import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse, ErrorResponse } from '@app/model/api';
+import { AppError } from '@app/common/error';
+import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse } from '@app/model/api';
 import _ from 'lodash';
 
 @Injectable({
@@ -15,8 +16,8 @@ export class AppService {
   private _currentDirectoryInfo: DirectoryInfo = null;
   private _downloadQueue: Queue = [];
   private _uploadQueue: Queue = [];
-  private _downloading: boolean = false;
-  private _uploading: boolean = false;
+  private _downloading: string = null;
+  private _uploading: string = null;
   private _fileSelection: FileSelection = {};
 
   public onPathUpdated: BehaviorSubject<DirectoryInfo> = new BehaviorSubject(this.currentDirectoryInfo);
@@ -185,14 +186,14 @@ export class AppService {
 
     if ( ! this._downloadQueue.length ) {
 
-      this._downloading = false;
+      this._downloading = null;
       return;
 
     }
 
-    this._downloading = true;
-
     const file = this._downloadQueue.shift();
+
+    this._downloading = file.remote;
 
     const sub = file.subject.subscribe(
       null,
@@ -200,7 +201,7 @@ export class AppService {
 
         sub.unsubscribe();
         this._downloadQueue = [];
-        this._downloading = false;
+        this._downloading = null;
 
       }, () => {
 
@@ -218,14 +219,14 @@ export class AppService {
 
     if ( ! this._uploadQueue.length ) {
 
-      this._uploading = false;
+      this._uploading = null;
       return;
 
     }
 
-    this._uploading = true;
-
     const file = this._uploadQueue.shift();
+
+    this._uploading = file.remote;
 
     const sub = file.subject.subscribe(
       null,
@@ -233,7 +234,7 @@ export class AppService {
 
         sub.unsubscribe();
         this._uploadQueue = [];
-        this._uploading = false;
+        this._uploading = null;
 
       }, () => {
 
@@ -302,6 +303,7 @@ export class AppService {
   public get currentDirectoryInfo(): DirectoryInfo { return _.cloneDeep(this._currentDirectoryInfo); }
   public get fileSelection(): FileSelection { return _.cloneDeep(this._fileSelection); }
   public get isReady(): BehaviorSubject<boolean> { return this.api.isReady; }
+  public get currentUploadingRemote(): string { return this._uploading; }
 
   public deselectAll(): void {
 
@@ -416,6 +418,18 @@ export class AppService {
 
     const subject = new Subject<number>();
 
+    if ( _.find(this._downloadQueue, file => file.remote === remote) || this._downloading === remote ) {
+
+      setTimeout(() => {
+
+        subject.error(new AppError('File already in queue!', 'IDENTICAL_FILE'));
+
+      }, 100);
+
+      return subject;
+
+    }
+
     this._downloadQueue.push({
       remote: remote,
       filename: filename,
@@ -432,6 +446,18 @@ export class AppService {
   public upload(filename: string, size: number, remote: string): Subject<number> {
 
     const subject = new Subject<number>();
+
+    if ( _.find(this._uploadQueue, file => file.remote === remote) || this._uploading === remote ) {
+
+      setTimeout(() => {
+
+        subject.error(new AppError('File already in queue!', 'IDENTICAL_FILE'));
+
+      }, 100);
+
+      return subject;
+
+    }
 
     this._uploadQueue.push({
       remote: remote,
@@ -450,10 +476,10 @@ export class AppService {
 
     return new Promise((resolve, reject) => {
 
-    path = `/${path}`.replace(/\.\/+/g, '').replace(/\/+/g, '/').replace(/\.$/, '').replace(/\/$/, '');
+    path = `/${path}`.replace(/\.\/+/g, '').replace(/\/+/g, '/').replace(/\.$/, '');
 
 
-      this.api.server<DirectoryInfoResponse>(`/fs/${path}`, 'get')
+      this.api.server<DirectoryInfoResponse>(`/fs${path}`, 'get')
       .then(response => {
 
         this._currentPath = path;
@@ -478,7 +504,7 @@ export class AppService {
 
   public cdBack(): Promise<void> {
 
-    if ( this._currentPath === '' ) return Promise.reject(new Error('Cannot cd back from root!'));
+    if ( this._currentPath === '/' ) return Promise.reject(new Error('Cannot cd back from root!'));
 
     return this.cdAbsolute(this._currentPath.replace(/\/+$/, '').replace(/[^\/]+$/, ''));
 

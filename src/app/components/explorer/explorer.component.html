@@ -6,17 +6,19 @@
       <app-progress-bar [progress]="uploadInfo[path].progress" progress-color="#47ec6b"></app-progress-bar>
     </div>
   </ng-container>
-  <div
-  *ngFor="let child of currentDir.children; let index = index"
-  class="child"
-  [ngClass]="{ selected: child.filename && selection && selection[child.filename] }"
-  (click)="selectChild($event, child.filename)"
-  (dblclick)="openDir($event, child.name)">
-    <fa-icon class="more" icon="ellipsis-v" (click)="showFileInfo(index, $event)"></fa-icon>
-    <fa-icon [icon]="child.name ? 'folder' : getTypeIcon(child.filename)" size="sm"></fa-icon>
-    <span class="filename">{{ child.name || child.filename }}</span>
-    <app-progress-bar *ngIf="downloadInfo[child.path]" [progress]="downloadInfo[child.path].progress"></app-progress-bar>
-  </div>
+  <ng-container *ngFor="let child of currentDir.children; let index = index">
+    <div
+    *ngIf="child.path && child.path !== currentIncompleteRemote()"
+    class="child"
+    [ngClass]="{ selected: child.filename && selection && selection[child.filename] }"
+    (click)="selectChild($event, child.filename)"
+    (dblclick)="openDir($event, child.name)">
+      <fa-icon class="more" icon="ellipsis-v" (click)="showFileInfo(index, $event)"></fa-icon>
+      <fa-icon [icon]="child.name ? 'folder' : getTypeIcon(child.filename)" size="sm"></fa-icon>
+      <span class="filename">{{ child.name || child.filename }}</span>
+      <app-progress-bar *ngIf="downloadInfo[child.path]" [progress]="downloadInfo[child.path].progress"></app-progress-bar>
+    </div>
+  </ng-container>
   <app-modal *ngIf="currentDir.children.length" [modal-show]="showInfoModal" [modal-close]="modalCloseButton" (modal-closed)="onInfoModalClosed()">
     <div class="modal-header">
       File Info

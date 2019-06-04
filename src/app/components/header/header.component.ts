@@ -24,7 +24,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.pathSub = this.app.onPathUpdated.subscribe(() => {
 
       this.currentPath = this.app.currentPath;
-      this.root = this.currentPath === '';
+      this.root = this.currentPath === '/';
       this.detector.detectChanges();
 
     });

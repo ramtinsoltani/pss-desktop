@@ -67,6 +67,7 @@ export class ExplorerComponent implements OnInit, OnDestroy {
         this.downloadInfo[info.path] = info;
         clearInterval(this.detectionInterval);
         this.detectionInterval = setInterval(() => this.detector.detectChanges(), 100);
+        this.detector.detectChanges();
 
       }
       else {
@@ -87,6 +88,7 @@ export class ExplorerComponent implements OnInit, OnDestroy {
         this.uploadInfo[info.path] = info;
         clearInterval(this.detectionInterval);
         this.detectionInterval = setInterval(() => this.detector.detectChanges(), 100);
+        this.detector.detectChanges();
 
       }
       else {
@@ -99,6 +101,12 @@ export class ExplorerComponent implements OnInit, OnDestroy {
       }
 
     });
+
+  }
+
+  public currentIncompleteRemote(): string {
+
+    return this.app.currentUploadingRemote;
 
   }
 
