@@ -17,3 +17,15 @@
     </div>
   </form>
 </app-modal>
+<app-modal [modal-show]="showOverwriteAlert" [modal-close]="modalCloseButton3" (modal-closed)="onOverwriteModalClosed()">
+  <div class="modal-header">
+    File Overwrite
+  </div>
+  <div class="modal-body">
+    <p>The current upload operation would overwrite {{ overwrites.length }} file{{ overwrites.length > 1 ? 's' : '' }}, do you want to proceed?</p>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-danger btn-block" (click)="onOverwriteModalConfirmed()">Proceed</button>
+    <button type="button" class="btn btn-primary btn-block" #modalCloseButton3>Cancel</button>
+  </div>
+</app-modal>

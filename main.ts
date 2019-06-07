@@ -466,7 +466,7 @@ class ElectronApp {
 
       let progress: number = 0;
       const r = request.post({
-        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs/${remoteFilename}`,
+        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs${remoteFilename}`,
         qs: { token: token },
         headers: {
           'Content-Length': size,
