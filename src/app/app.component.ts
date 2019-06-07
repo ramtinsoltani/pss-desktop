@@ -54,7 +54,7 @@ export class AppComponent implements OnInit {
   public onKeyDown(event: KeyboardEvent) {
 
     if ( event.key !== 'a' || ! event.ctrlKey ) return;
-    if ( ! this.app.isWindowFocused || ! this.app.currentDirectoryInfo ) return;
+    if ( ! this.app.isWindowFocused || ! this.app.currentDirectoryInfo || ! this.app.isExplorerFocused ) return;
 
     const filenames = [];
 
@@ -108,6 +108,18 @@ export class AppComponent implements OnInit {
       );
 
     }
+
+  }
+
+  public onExplorerFocused(): void {
+
+    this.app.isExplorerFocused = true;
+
+  }
+
+  public onExplorerBlurred(): void {
+
+    this.app.isExplorerFocused = false;
 
   }
 

@@ -25,6 +25,7 @@ export class AppService {
   public onSelectionChanged: BehaviorSubject<FileSelection> = new BehaviorSubject(this.fileSelection);
   public onDiskSpaceRecalcNeeded: Subject<void> = new Subject();
   public isWindowFocused: boolean = true;
+  public isExplorerFocused: boolean = false;
   public onDownloadQueueUpdated: Subject<QueueInfo> = new Subject();
   public onUploadQueueUpdated: Subject<QueueInfo> = new Subject();
 

@@ -125,6 +125,7 @@ export class ExplorerComponent implements OnInit, OnDestroy {
   public onInfoModalClosed(): void {
 
     this.showInfoModal = false;
+    this.infoIndex = null;
 
   }
 

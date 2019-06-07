@@ -1,6 +1,6 @@
 <ng-template [ngIf]="! showLogin">
   <app-header></app-header>
-  <app-explorer (dropzone)="onFileDrop($event)"></app-explorer>
+  <app-explorer (dropzone)="onFileDrop($event)" tabindex="0" (focus)="onExplorerFocused()" (blur)="onExplorerBlurred()"></app-explorer>
   <app-footer></app-footer>
 </ng-template>
 <app-modal [modal-show]="showLogin">

@@ -131,6 +131,9 @@ input[type="number"] {
   &:disabled {
     color: map-get($colors, gray-medium);
   }
+  &.ng-invalid.ng-touched {
+    border: 2px solid map-get($colors, error);
+  }
 }
 
 p.msg-error {

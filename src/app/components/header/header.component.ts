@@ -1,5 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { NgForm } from '@angular/forms';
 import { AppService } from '@app/service/app';
+import { DirectoryInfo } from '@app/model/app';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -13,6 +15,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   public root: boolean = true;
   public currentPath: string;
+  public showDirectoryModal: boolean = false;
+  public creatingDirectory: boolean = false;
 
   constructor(
     private app: AppService,
@@ -26,6 +30,60 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.currentPath = this.app.currentPath;
       this.root = this.currentPath === '/';
       this.detector.detectChanges();
+
+    });
+
+  }
+
+  public onMakeDirectory(): void {
+
+    if ( ! this.app.authenticated || ! this.app.currentDirectoryInfo ) return;
+
+    this.showDirectoryModal = true;
+
+  }
+
+  public onDirectoryModalClosed(form: NgForm): void {
+
+    form.reset();
+    this.showDirectoryModal = false;
+
+  }
+
+  public onDirectoryModalConfirmed(form: NgForm): void {
+
+    const children = this.app.currentDirectoryInfo.children;
+
+    for ( const child of children ) {
+
+      if ( child.hasOwnProperty('name') && (<DirectoryInfo>child).name === form.value.name.trim() ) {
+
+        this.app.sendNotification('New Directory', 'Cannot create an identical directory!');
+        return;
+
+      }
+
+    }
+
+    this.creatingDirectory = true;
+
+    this.app.mkdir(form.value.name)
+    .then(() => {
+
+      return this.app.cd('.');
+
+    })
+    .catch(error => {
+
+      this.app.sendNotification('New Directory', 'Could not create new directory due to an error!');
+      console.error(error);
+
+    })
+    .finally(() => {
+
+      form.reset();
+      this.showDirectoryModal = false;
+      this.creatingDirectory = false;
 
     });
 

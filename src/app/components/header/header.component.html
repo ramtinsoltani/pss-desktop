@@ -1,2 +1,25 @@
 <fa-icon [icon]="root ? 'folder-open' : 'angle-left'" size="lg" [fixedWidth]="true" class="min-btn" [ngClass]="{ 'idle': root }" (click)="cdBack()"></fa-icon>
 <span class="path">{{ currentPath }}</span>
+<span class="tools">
+  <span class="tool-btn" (click)="onMakeDirectory()"><fa-icon icon="folder-plus"></fa-icon></span>
+  <!-- <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
+  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
+  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
+  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
+  <span class="tool-btn tool-btn-danger"><fa-icon icon="folder-plus"></fa-icon></span>
+  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span> -->
+</span>
+<app-modal [modal-show]="showDirectoryModal" [modal-close]="modalCloseButton1" (modal-closed)="onDirectoryModalClosed(df)">
+  <form #df="ngForm" (ngSubmit)="onDirectoryModalConfirmed(df)">
+    <div class="modal-header">
+      New Directory
+    </div>
+    <div class="modal-body">
+      <input type="text" placeholder="Directory Name" class="block" name="name" ngModel required directoryName>
+    </div>
+    <div class="modal-footer">
+      <button type="submit" [disabled]="creatingDirectory || df.invalid" class="btn btn-primary btn-block">Create</button>
+      <button type="button" class="btn btn-secondary btn-block" #modalCloseButton1>Cancel</button>
+    </div>
+  </form>
+</app-modal>
