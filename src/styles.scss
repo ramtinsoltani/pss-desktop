@@ -136,6 +136,20 @@ input[type="number"] {
   }
 }
 
+.input-group {
+  display: flex;
+  width: 100%;
+  :not(:last-child) {
+    margin-right: 10px;
+  }
+  & > * {
+    width: 100%;
+    &.w-half {
+      width: 50%;
+    }
+  }
+}
+
 p.msg-error {
   background-color: map-get($colors, error);
   color: map-get($colors, gray-lighter);

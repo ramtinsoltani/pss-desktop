@@ -35,6 +35,31 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   }
 
+  public onServerChange(): void {
+
+    this.app.serverModalRequested.next();
+
+  }
+
+  public toggleDevTools(): void {
+
+    this.app.toggleDevTools();
+
+  }
+
+  public isAdmin(): boolean {
+
+    return this.app.isAdmin;
+
+  }
+
+  public onRefresh(): void {
+
+    this.app.cd('.')
+    .catch(error => console.error);
+
+  }
+
   public onMakeDirectory(): void {
 
     if ( ! this.app.authenticated || ! this.app.currentDirectoryInfo ) return;
@@ -51,6 +76,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   public onDirectoryModalConfirmed(form: NgForm): void {
+
+    if ( form.invalid ) return;
 
     const children = this.app.currentDirectoryInfo.children;
 

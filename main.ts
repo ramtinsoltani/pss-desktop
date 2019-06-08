@@ -44,6 +44,9 @@ class ElectronApp {
 
   private window: BrowserWindow;
   private onKilled: Subject<void> = new Subject();
+  private disableDevtools: boolean = true;
+  private userServerUrl: string = null;
+  private userPort: number = null;
 
   constructor(private config: any) {
 
@@ -77,20 +80,20 @@ class ElectronApp {
     // Create window on electron init
     app.on('ready', () => {
 
-      // Menu.setApplicationMenu(null);
-      //
-      // app.on('browser-window-created', (e, window) => {
-      //
-      //   // Remove the default menu and disable dev tools
-      //   window.setMenu(null);
-      //
-      //   window.webContents.on('devtools-opened', () => {
-      //
-      //     window.webContents.closeDevTools();
-      //
-      //   });
-      //
-      // });
+      Menu.setApplicationMenu(null);
+
+      app.on('browser-window-created', (e, window) => {
+
+        // Remove the default menu and disable dev tools
+        window.setMenu(null);
+
+        window.webContents.on('devtools-opened', () => {
+
+          if ( this.disableDevtools ) window.webContents.closeDevTools();
+
+        });
+
+      });
 
       this.defineIPCs();
       this.createWindow();
@@ -287,6 +290,22 @@ class ElectronApp {
 
     });
 
+    // For toggling dev tools
+    ipcMain.on('toggle-devtools', () => {
+
+      this.disableDevtools = false;
+      this.window.webContents.toggleDevTools();
+
+    });
+
+    // For setting user-defined server address
+    ipcMain.on('change-server', (event: IPCEvent, id: string, url: string, port: number) => {
+
+      this.userServerUrl = url;
+      this.userPort = port;
+
+    });
+
   }
 
   private showNotification(title: string, message: string): void {
@@ -380,7 +399,7 @@ class ElectronApp {
     return new Promise((resolve, reject) => {
 
       request({
-        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}${endpoint}`,
+        uri: `${this.userServerUrl || this.config.defaultServerUrl}:${this.userPort || this.config.defaultServerPort}${endpoint}`,
         method: method,
         qs: query,
         body: body,
@@ -408,7 +427,7 @@ class ElectronApp {
       let stream: fs.WriteStream = null;
 
       const r = request.get({
-        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs${remoteFilename}`,
+        uri: `${this.userServerUrl || this.config.defaultServerUrl}:${this.userPort || this.config.defaultServerPort}/fs${remoteFilename}`,
         qs: { token: token }
       })
       .on('response', response => {
@@ -466,7 +485,7 @@ class ElectronApp {
 
       let progress: number = 0;
       const r = request.post({
-        uri: `${this.config.defaultServerUrl}:${this.config.defaultServerPort}/fs${remoteFilename}`,
+        uri: `${this.userServerUrl || this.config.defaultServerUrl}:${this.userPort || this.config.defaultServerPort}/fs${remoteFilename}`,
         qs: { token: token },
         headers: {
           'Content-Length': size,

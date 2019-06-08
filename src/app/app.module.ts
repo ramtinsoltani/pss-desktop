@@ -9,6 +9,8 @@ import { installIcons } from './fontawesome-icons';
 import { AppComponent } from './app.component';
 import { DropzoneDirective } from '@app/directive/dropzone';
 import { DirectoryNameValidatorDirective } from '@app/directive/directory-name';
+import { UrlValidatorDirective } from '@app/directive/url';
+import { PortValidatorDirective } from '@app/directive/port';
 import {
   HeaderComponent,
   FooterComponent,
@@ -28,7 +30,9 @@ installIcons();
     ExplorerComponent,
     ModalComponent,
     ProgressBarComponent,
-    DirectoryNameValidatorDirective
+    DirectoryNameValidatorDirective,
+    UrlValidatorDirective,
+    PortValidatorDirective
   ],
   imports: [
     BrowserModule,

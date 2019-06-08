@@ -30,6 +30,16 @@ export class ApiService {
     private ipc: IpcService
   ) {
 
+    // Server address
+    const userServerUrl = localStorage.getItem('server-url');
+    const userServerPort = localStorage.getItem('server-port');
+
+    if ( userServerUrl || userServerPort ) {
+
+      this.ipc.send('change-server', [userServerUrl, userServerPort]);
+
+    }
+
     // Server health listeners
     this.ipc.send('server-api', ['/health'], {
 
@@ -43,6 +53,10 @@ export class ApiService {
       'error': (error: Error) => {
 
         this._disabled = true;
+        this.invalidateAuth();
+        this.isReady.next(! this._disabled);
+        this.ipc.send('notify', ['Cloud Storage Server', 'The server is not responding!']);
+
         console.error(error);
 
       }
@@ -66,13 +80,13 @@ export class ApiService {
     // Auth state management
     this.onAuthenticationChanged.subscribe(authenticated => {
 
-      if ( authenticated ) localStorage.setItem('lastToken', this._token);
-      else localStorage.removeItem('lastToken');
+      if ( authenticated ) localStorage.setItem('last-token', this._token);
+      else localStorage.removeItem('last-token');
 
     });
 
     // Reauthenticate for 24 hours if there's a last token as soon as the service is ready
-    const lastToken = localStorage.getItem('lastToken');
+    const lastToken = localStorage.getItem('last-token');
 
     if ( ! lastToken ) return;
 
@@ -155,6 +169,8 @@ export class ApiService {
 
         },
         'error': (error: any) => {
+
+          if ( error.code === 'ECONNREFUSED' ) this.checkHealth();
 
           reject(new AppError(error.message, error.code || 'UNKNOWN_ERROR'));
 
@@ -372,6 +388,17 @@ export class ApiService {
     this._username = null;
     this._admin = false;
     this.onAuthenticationChanged.next(false);
+
+  }
+
+  public setServerAddress(url: string, port: number): void {
+
+    localStorage.setItem('server-url', url);
+    localStorage.setItem('server-port', port + '');
+
+    this.ipc.send('change-server', [url, port]);
+
+    this.checkHealth();
 
   }
 

@@ -24,9 +24,11 @@ export class AppComponent implements OnInit {
 
   private files: DropzoneFile[] = [];
 
+  public showServerModal: boolean = false;
   public showLogin: boolean = false;
-  public loginError: string = null;
   public showOverwriteAlert: boolean = false;
+  public loginError: string = null;
+  public authenticated: boolean = false;
   public overwrites: FileInfo[] = [];
 
   @HostListener('body:click')
@@ -77,12 +79,25 @@ export class AppComponent implements OnInit {
 
     this.app.onAuthChanged.subscribe(authenticated => {
 
+      this.authenticated = authenticated;
+
       this.showLogin = ! authenticated;
       this.detector.detectChanges();
 
     });
 
-    this.showLogin = ! this.app.authenticated;
+    this.app.serverModalRequested.subscribe(() => {
+
+      this.showServerModal = true;
+
+    });
+
+    this.app.isReady.subscribe(ready => {
+
+      this.showServerModal = ! ready;
+      this.detector.detectChanges();
+
+    });
 
   }
 
@@ -217,6 +232,32 @@ export class AppComponent implements OnInit {
 
     if ( this.overwrites.length ) this.showOverwriteAlert = true;
     else this.uploadFiles();
+
+  }
+
+  public onServerModalClosed(form: NgForm): void {
+
+    this.showServerModal = false;
+    form.reset();
+
+  }
+
+  public onServerModalConfirmed(form: NgForm): void {
+
+    if ( form.invalid ) return;
+
+    const url: string = form.value.url;
+    let port: number = form.value.port;
+
+    if ( typeof form.value.port !== 'number' ) {
+
+      port = (new URL(url)).protocol === 'https:' ? 443 : 80;
+
+    }
+
+    this.app.setServerAddres(url, port);
+    this.onServerModalClosed(form);
+
 
   }
 

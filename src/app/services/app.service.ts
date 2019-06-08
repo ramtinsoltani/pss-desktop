@@ -28,6 +28,7 @@ export class AppService {
   public isExplorerFocused: boolean = false;
   public onDownloadQueueUpdated: Subject<QueueInfo> = new Subject();
   public onUploadQueueUpdated: Subject<QueueInfo> = new Subject();
+  public serverModalRequested: Subject<void> = new Subject();
 
   constructor(
     private api: ApiService,
@@ -98,6 +99,8 @@ export class AppService {
       },
       'error': (error: any) => {
 
+        if ( error.code === 'ECONNREFUSED' ) this.api.checkHealth();
+
         if ( error.status === 401 ) {
 
           this.api.invalidateAuth();
@@ -157,6 +160,8 @@ export class AppService {
 
       },
       'error': (error: any) => {
+
+        if ( error.code === 'ECONNREFUSED' ) this.api.checkHealth();
 
         if ( error.status === 401 ) {
 
@@ -562,6 +567,20 @@ export class AppService {
   public sendNotification(title: string, message: string): void {
 
     this.ipc.send('notify', [title, message]);
+
+  }
+
+  public toggleDevTools(): void {
+
+    if ( ! this.isAdmin ) return;
+
+    this.ipc.send('toggle-devtools');
+
+  }
+
+  public setServerAddres(url: string, port: number): void {
+
+    this.api.setServerAddress(url, port);
 
   }
 

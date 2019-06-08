@@ -26,7 +26,8 @@ import {
   faFileCsv,
   faFileContract,
   faFolder,
-  faEllipsisV
+  faEllipsisV,
+  faTerminal
 } from '@fortawesome/free-solid-svg-icons';
 
 export function installIcons() {
@@ -58,7 +59,8 @@ export function installIcons() {
     faFileCsv,
     faFileContract,
     faFolder,
-    faEllipsisV
+    faEllipsisV,
+    faTerminal
   );
 
 }

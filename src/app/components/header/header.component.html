@@ -2,12 +2,9 @@
 <span class="path">{{ currentPath }}</span>
 <span class="tools">
   <span class="tool-btn" (click)="onMakeDirectory()"><fa-icon icon="folder-plus"></fa-icon></span>
-  <!-- <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
-  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
-  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
-  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span>
-  <span class="tool-btn tool-btn-danger"><fa-icon icon="folder-plus"></fa-icon></span>
-  <span class="tool-btn"><fa-icon icon="folder-plus"></fa-icon></span> -->
+  <span class="tool-btn" (click)="onRefresh()"><fa-icon icon="sync-alt"></fa-icon></span>
+  <span *ngIf="isAdmin()" class="tool-btn" (click)="toggleDevTools()"><fa-icon icon="terminal"></fa-icon></span>
+  <span class="tool-btn" (click)="onServerChange()"><fa-icon icon="server"></fa-icon></span>
 </span>
 <app-modal [modal-show]="showDirectoryModal" [modal-close]="modalCloseButton1" (modal-closed)="onDirectoryModalClosed(df)">
   <form #df="ngForm" (ngSubmit)="onDirectoryModalConfirmed(df)">
