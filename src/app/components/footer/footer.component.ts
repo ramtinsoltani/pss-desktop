@@ -52,7 +52,7 @@ export class FooterComponent implements OnInit, OnDestroy {
 
     this.readySub = this.app.isReady.subscribe(ready => {
 
-      if ( ! ready ) return;
+      if ( ! ready || ! this.app.authenticated ) return;
 
       if ( this.readySub && ! this.readySub.closed ) this.readySub.unsubscribe();
       else if ( ! this.readySub ) setTimeout(() => this.readySub.unsubscribe(), 100);

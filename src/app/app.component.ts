@@ -24,10 +24,14 @@ export class AppComponent implements OnInit {
 
   private files: DropzoneFile[] = [];
 
+  public currentAuthView: AuthView = AuthView.Login;
+  public authView = AuthView;
   public showServerModal: boolean = false;
-  public showLogin: boolean = false;
+  public showAuthModal: boolean = false;
   public showOverwriteAlert: boolean = false;
   public loginError: string = null;
+  public resetError: string = null;
+  public infoMsg: string = null;
   public authenticated: boolean = false;
   public overwrites: FileInfo[] = [];
 
@@ -81,7 +85,8 @@ export class AppComponent implements OnInit {
 
       this.authenticated = authenticated;
 
-      this.showLogin = ! authenticated;
+      this.showAuthModal = ! authenticated;
+      this.currentAuthView = AuthView.Login;
       this.detector.detectChanges();
 
     });
@@ -178,11 +183,30 @@ export class AppComponent implements OnInit {
 
   }
 
+  public showResetPassword(): void {
+
+    this.resetError = null;
+    this.loginError = null;
+    this.infoMsg = null;
+    this.currentAuthView = AuthView.Reset;
+
+  }
+
+  public showLogin(): void {
+
+    this.resetError = null;
+    this.loginError = null;
+    this.infoMsg = null;
+    this.currentAuthView = AuthView.Login;
+
+  }
+
   public login(form: NgForm): void {
 
     if ( form.invalid ) return;
 
     this.loginError = null;
+    this.infoMsg = null;
 
     this.app.login(form.value.username, form.value.password)
     .catch(error => {
@@ -196,6 +220,31 @@ export class AppComponent implements OnInit {
       form.reset();
 
     });
+
+  }
+
+  public resetPassword(form: NgForm): void {
+
+    if ( form.invalid ) return;
+
+    this.resetError = null;
+
+    this.app.updatePassword(form.value.username, form.value.password, form.value.code)
+    .then(() => {
+
+      this.infoMsg = 'Your password was updated.';
+      form.reset();
+      this.currentAuthView = AuthView.Login;
+
+    })
+    .catch(error => {
+
+      this.resetError = error.message;
+      console.error(error);
+      form.reset();
+
+    })
+    .finally(() => this.detector.detectChanges());
 
   }
 
@@ -260,5 +309,12 @@ export class AppComponent implements OnInit {
 
 
   }
+
+}
+
+enum AuthView {
+
+  Login,
+  Reset
 
 }

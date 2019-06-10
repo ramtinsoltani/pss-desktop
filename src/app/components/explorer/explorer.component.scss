@@ -64,18 +64,3 @@
     opacity: 1;
   }
 }
-
-.info-group {
-  width: 100%;
-  span.info-title {
-    font-weight: 500;
-    color: map-get($colors, gray-darker);
-  }
-  span.info-value {
-    color: map-get($colors, gray-dark);
-    margin-left: 10px;
-  }
-  span.info-value-important {
-    color: map-get($colors, accent);
-  }
-}

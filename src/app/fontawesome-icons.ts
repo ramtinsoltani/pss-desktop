@@ -4,6 +4,8 @@ import {
   faFolderPlus,
   faUsers,
   faUserSlash,
+  faUser,
+  faUserPlus,
   faServer,
   faSyncAlt,
   faFolderOpen,
@@ -27,7 +29,9 @@ import {
   faFileContract,
   faFolder,
   faEllipsisV,
-  faTerminal
+  faTerminal,
+  faCrown,
+  faKey
 } from '@fortawesome/free-solid-svg-icons';
 
 export function installIcons() {
@@ -37,6 +41,8 @@ export function installIcons() {
     faFolderPlus,
     faUsers,
     faUserSlash,
+    faUser,
+    faUserPlus,
     faServer,
     faSyncAlt,
     faFolderOpen,
@@ -60,7 +66,9 @@ export function installIcons() {
     faFileContract,
     faFolder,
     faEllipsisV,
-    faTerminal
+    faTerminal,
+    faCrown,
+    faKey
   );
 
 }

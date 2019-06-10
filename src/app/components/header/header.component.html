@@ -5,6 +5,7 @@
   <span class="tool-btn" (click)="onRefresh()"><fa-icon icon="sync-alt"></fa-icon></span>
   <span *ngIf="isAdmin()" class="tool-btn" (click)="toggleDevTools()"><fa-icon icon="terminal"></fa-icon></span>
   <span class="tool-btn" (click)="onServerChange()"><fa-icon icon="server"></fa-icon></span>
+  <span class="tool-btn" (click)="onShowAccount()"><fa-icon icon="user"></fa-icon></span>
 </span>
 <app-modal [modal-show]="showDirectoryModal" [modal-close]="modalCloseButton1" (modal-closed)="onDirectoryModalClosed(df)">
   <form #df="ngForm" (ngSubmit)="onDirectoryModalConfirmed(df)">
@@ -19,4 +20,50 @@
       <button type="button" class="btn btn-secondary btn-block" #modalCloseButton1>Cancel</button>
     </div>
   </form>
+</app-modal>
+<app-modal [modal-show]="showAccountModal" [modal-close]="modalCloseButton2" (modal-closed)="onAccountModalClosed()">
+  <div class="modal-header">
+    Account Settings
+  </div>
+  <p @vsqueeze *ngIf="accessCode" class="msg msg-info">ACCESS CODE: {{ accessCode }}</p>
+  <p @vsqueeze *ngIf="newError" class="msg msg-error">{{ newError }}</p>
+  <div class="modal-body" [ngClass]="{ scrollable: currentAccountView === accountView.Others }">
+    <ng-template [ngIf]="currentAccountView === accountView.Self">
+      <form #daf="ngForm" (ngSubmit)="onDeleteAccount(daf)">
+        <p>
+          Enter your username to delete your account.
+        </p>
+        <div class="input-vgroup">
+          <input type="text" class="block" placeholder="Username" name="username" ngModel required username>
+          <button type="submit" [disabled]="daf.invalid" class="btn btn-danger btn-block"><fa-icon icon="user-slash"></fa-icon>Delete Account</button>
+        </div>
+      </form>
+    </ng-template>
+    <ng-template [ngIf]="currentAccountView === accountView.Others">
+      <div class="user-item" *ngFor="let user of users" [ngClass]="{ admin: user.admin }">
+        <fa-icon [fixedWidth]="true" [icon]="user.admin ? 'crown' : 'user'"></fa-icon>
+        <span class="path">{{ user.username }}</span>
+        <div class="tools">
+          <span *ngIf="! user.admin" class="tool-btn tool-btn-danger" (click)="deleteUser(user.username)"><fa-icon icon="user-slash"></fa-icon></span>
+          <span class="tool-btn" (click)="generateUserCode(user.username)"><fa-icon icon="key"></fa-icon></span>
+          <span *ngIf="! user.admin" class="tool-btn" (click)="promoteUser(user.username)"><fa-icon icon="crown"></fa-icon></span>
+        </div>
+      </div>
+    </ng-template>
+    <ng-template [ngIf]="currentAccountView === accountView.New">
+      <form #nuf="ngForm" (ngSubmit)="onCreateAccount(nuf)">
+        <div class="input-vgroup">
+          <input type="text" class="block" placeholder="Username" name="username" ngModel required minlength="6" maxlength="32">
+          <input type="password" class="block" placeholder="Password" name="password" ngModel required minlength="8" maxlength="64" password>
+          <button type="submit" [disabled]="nuf.invalid" class="btn btn-primary btn-block"><fa-icon icon="user-plus"></fa-icon>Create Account</button>
+        </div>
+      </form>
+    </ng-template>
+  </div>
+  <div class="modal-footer">
+    <button *ngIf="currentAccountView !== accountView.New && isAdmin()" type="button" class="btn btn-primary btn-block" (click)="toggleSelfView()"><fa-icon [icon]="currentAccountView === accountView.Self ? 'users' : 'user'"></fa-icon>{{ currentAccountView === accountView.Self ? 'Manage Other Users' : 'Manage Your Account' }}</button>
+    <button *ngIf="currentAccountView !== accountView.Self && isAdmin()" type="button" class="btn btn-primary btn-block" (click)="toggleNewUserView()"><fa-icon [icon]="currentAccountView === accountView.Others ? 'user-plus' : 'users'"></fa-icon>{{ currentAccountView === accountView.Others ? 'Add New User' : 'Manage Other Users' }}</button>
+    <button *ngIf="currentAccountView === accountView.Self" type="button" class="btn btn-danger btn-block" (click)="logout()">Logout</button>
+    <button type="button" class="btn btn-secondary btn-block" #modalCloseButton2>Close</button>
+  </div>
 </app-modal>

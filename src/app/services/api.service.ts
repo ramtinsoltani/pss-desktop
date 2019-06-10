@@ -6,7 +6,8 @@ import {
   ErrorResponse,
   MessageResponse,
   UserResponse,
-  UsersListResponse
+  UsersListResponse,
+  CodeResponse
 } from '@app/model/api';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { IpcService } from '@app/service/ipc';
@@ -186,10 +187,11 @@ export class ApiService {
   public get authenticated(): boolean { return this._token !== null; }
   public get isAdmin(): boolean { return this._admin; }
   public get token(): string { return this._token; }
+  public get username(): string { return this._username; }
 
   public checkHealth(): void {
 
-    this.ipc.send('server-api', ['/health'], {}, {
+    this.ipc.send('server-api', ['/health', 'get'], {}, {
       forceId: 'health-check'
     });
 
@@ -294,7 +296,7 @@ export class ApiService {
       if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
       if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
 
-      this.server<MessageResponse>('/auth/user', 'delete', null, { username: username })
+      this.server<MessageResponse>('/auth/user', 'delete', null, { username: username }, { 'content-type': 'application/json' })
       .then(response => {
 
         console.log(response.message);
@@ -346,7 +348,7 @@ export class ApiService {
         username: username,
         password: Buffer.from(password).toString('base64'),
         admin: admin
-      })
+      }, { 'content-type': 'application/json' })
       .then(response => {
 
         console.log(response.message);
@@ -359,17 +361,60 @@ export class ApiService {
 
   }
 
-  public updatePassword(username: string, newPassword: string): Promise<void> {
+  public getAccessCode(username: string): Promise<string> {
 
     return new Promise((resolve, reject) => {
 
       if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
       if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
 
+      this.server<CodeResponse>('/auth/user/temp', 'post', null, {
+        username: username
+      }, { 'content-type': 'application/json' })
+      .then(response => {
+
+        resolve(response.code);
+
+      })
+      .catch(reject);
+
+    });
+
+  }
+
+  public updatePassword(username: string, newPassword: string, code: string): Promise<void> {
+
+    return new Promise((resolve, reject) => {
+
+      if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
+
       this.server<MessageResponse>('/auth/user', 'put', null, {
         username: username,
-        password: Buffer.from(newPassword).toString('base64')
+        password: Buffer.from(newPassword).toString('base64'),
+        code: code
+      }, { 'content-type': 'application/json' }, false)
+      .then(response => {
+
+        console.log(response.message);
+        resolve();
+
       })
+      .catch(reject);
+
+    });
+
+  }
+
+  public promoteUser(username: string): Promise<void> {
+
+    return new Promise((resolve, reject) => {
+
+      if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
+      if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
+
+      this.server<MessageResponse>('/auth/user/promote', 'post', null, {
+        username: username
+      }, { 'content-type': 'application/json' })
       .then(response => {
 
         console.log(response.message);

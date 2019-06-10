@@ -3,19 +3,39 @@
   <app-explorer (dropzone)="onFileDrop($event)" tabindex="0" (focus)="onExplorerFocused()" (blur)="onExplorerBlurred()"></app-explorer>
   <app-footer></app-footer>
 </ng-template>
-<app-modal [modal-show]="showLogin && ! showServerModal">
-  <form #f="ngForm" (ngSubmit)="login(f)">
-    <div class="modal-header">Login</div>
-    <div class="modal-body">
-      <p @vsqueeze *ngIf="loginError" class="msg-error">{{ loginError }}</p>
-      <p>Please login to your account to access the shared cloud.</p>
+<app-modal [modal-show]="showAuthModal && ! showServerModal">
+  <ng-template [ngIf]="currentAuthView === authView.Login">
+    <form #f="ngForm" (ngSubmit)="login(f)">
+      <div class="modal-header">Login</div>
+      <p @vsqueeze *ngIf="loginError" class="msg msg-error">{{ loginError }}</p>
+      <p @vsqueeze *ngIf="infoMsg" class="msg msg-info">{{ infoMsg }}</p>
+      <div class="modal-body">
+        <p>Please login to your account to access the shared cloud.</p>
         <input class="block" placeholder="Username" name="username" type="text" required ngModel minlength="6" maxlength="32">
-        <input class="block" placeholder="Password" name="password" type="password" required ngModel minlength="8" maxlength="64">
-    </div>
-    <div class="modal-footer">
-      <button type="submit" [disabled]="f.invalid" class="btn btn-block btn-primary">Login</button>
-    </div>
-  </form>
+        <input class="block" placeholder="Password" name="password" type="password" required ngModel minlength="8" maxlength="64" password>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" [disabled]="f.invalid" class="btn btn-block btn-primary">Login</button>
+        <button type="button" class="btn btn-secondary btn-block" (click)="showResetPassword()">Reset Password</button>
+      </div>
+    </form>
+  </ng-template>
+  <ng-template [ngIf]="currentAuthView === authView.Reset">
+    <form #rf="ngForm" (ngSubmit)="resetPassword(rf)">
+      <div class="modal-header">Password Reset</div>
+      <p @vsqueeze *ngIf="resetError" class="msg msg-error">{{ resetError }}</p>
+      <div class="modal-body">
+        <p>Please contact an admin to generate your temporary access code and provide it below.</p>
+        <input class="block" placeholder="Username" name="username" type="text" required ngModel minlength="6" maxlength="32">
+        <input class="block" placeholder="Access Code" name="code" type="text" required ngModel minlength="6" maxlength="6">
+        <input class="block" placeholder="New Password" name="password" type="password" required ngModel minlength="8" maxlength="64" password>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" [disabled]="rf.invalid" class="btn btn-block btn-primary">Reset</button>
+        <button type="button" class="btn btn-secondary btn-block" (click)="showLogin()">Back To Login</button>
+      </div>
+    </form>
+  </ng-template>
 </app-modal>
 <app-modal [modal-show]="showOverwriteAlert" [modal-close]="modalCloseButton1" (modal-closed)="onOverwriteModalClosed()">
   <div class="modal-header">

@@ -24,6 +24,12 @@ export interface TokenResponse {
 
 }
 
+export interface CodeResponse {
+
+  code: string;
+
+}
+
 export interface DiskInfoResponse {
 
   total: number;

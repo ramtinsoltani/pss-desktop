@@ -20,31 +20,15 @@ span.path {
   flex-grow: 1;
 }
 
-.tools {
+.user-item {
+  color: map-get($colors, gray-dark);
   display: flex;
-  *:not(:last-child) {
-    margin-right: 10px;
+  align-items: center;
+  .tools {
+    margin-left: 10px;
   }
-  .tool-btn {
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 40px;
-    width: 40px;
-    border-radius: 5px;
-    background-color: transparent;
-    color: map-get($colors, gray-dark);
-    cursor: pointer;
-    transition: background-color .2s ease-in-out, color .2s ease-in-out;
-    &:hover {
-      background-color: map-get($colors, gray-light)
-    }
-    &:active {
-      color: map-get($colors, accent);
-    }
-    &.tool-btn-danger:active {
-      color: map-get($colors, error);
-    }
+  &.admin,
+  span.path {
+    color: map-get($colors, accent);
   }
 }

@@ -11,6 +11,8 @@ import { DropzoneDirective } from '@app/directive/dropzone';
 import { DirectoryNameValidatorDirective } from '@app/directive/directory-name';
 import { UrlValidatorDirective } from '@app/directive/url';
 import { PortValidatorDirective } from '@app/directive/port';
+import { UsernameValidatorDirective } from '@app/directive/username';
+import { PasswordValidatorDirective } from '@app/directive/password';
 import {
   HeaderComponent,
   FooterComponent,
@@ -32,7 +34,9 @@ installIcons();
     ProgressBarComponent,
     DirectoryNameValidatorDirective,
     UrlValidatorDirective,
-    PortValidatorDirective
+    PortValidatorDirective,
+    UsernameValidatorDirective,
+    PasswordValidatorDirective
   ],
   imports: [
     BrowserModule,

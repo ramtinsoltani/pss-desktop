@@ -402,7 +402,7 @@ class ElectronApp {
         uri: `${this.userServerUrl || this.config.defaultServerUrl}:${this.userPort || this.config.defaultServerPort}${endpoint}`,
         method: method,
         qs: query,
-        body: body,
+        body: JSON.stringify(body),
         headers: headers
       }, (error, response) => {
 

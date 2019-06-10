@@ -150,13 +150,75 @@ input[type="number"] {
   }
 }
 
-p.msg-error {
-  background-color: map-get($colors, error);
+.input-vgroup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  :not(:last-child) {
+    margin-bottom: 10px;
+  }
+  & > * {
+    width: 100%;
+  }
+}
+
+p.msg {
   color: map-get($colors, gray-lighter);
   padding: 10px;
   font-size: 14px;
   font-weight: 500;
   text-transform: uppercase;
   text-align: center;
-  margin: -30px -20px 0 -20px !important;
+  margin: 0;
+  &.msg-error {
+    background-color: map-get($colors, error);
+  }
+
+  &.msg-info {
+    background-color: map-get($colors, accent);
+  }
+}
+
+.info-group {
+  width: 100%;
+  span.info-title {
+    font-weight: 500;
+    color: map-get($colors, gray-darker);
+  }
+  span.info-value {
+    color: map-get($colors, gray-dark);
+    margin-left: 10px;
+  }
+  span.info-value-important {
+    color: map-get($colors, accent);
+  }
+}
+
+.tools {
+  display: flex;
+  *:not(:last-child) {
+    margin-right: 10px;
+  }
+  .tool-btn {
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    width: 40px;
+    border-radius: 5px;
+    background-color: transparent;
+    color: map-get($colors, gray-dark);
+    cursor: pointer;
+    transition: background-color .2s ease-in-out, color .2s ease-in-out;
+    &:hover {
+      background-color: map-get($colors, gray-light)
+    }
+    &:active {
+      color: map-get($colors, accent);
+    }
+    &.tool-btn-danger:active {
+      color: map-get($colors, error);
+    }
+  }
 }

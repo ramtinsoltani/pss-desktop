@@ -272,7 +272,7 @@ export class AppService {
 
   }
 
-  public register(username: string, password: string, admin: true): Promise<void> {
+  public register(username: string, password: string, admin: boolean): Promise<void> {
 
     return this.api.register(username, password, admin);
 
@@ -296,15 +296,28 @@ export class AppService {
 
   }
 
-  public updatePassword(username: string, newPassword: string): Promise<void> {
+  public updatePassword(username: string, newPassword: string, code: string): Promise<void> {
 
-    return this.api.updatePassword(username, newPassword);
+    return this.api.updatePassword(username, newPassword, code);
+
+  }
+
+  public getAccessCode(username: string): Promise<string> {
+
+    return this.api.getAccessCode(username);
+
+  }
+
+  public promoteUser(username: string): Promise<void> {
+
+    return this.api.promoteUser(username);
 
   }
 
   public get disabled(): boolean { return this.api.disabled; }
   public get authenticated(): boolean { return this.api.authenticated; }
   public get isAdmin(): boolean { return this.api.isAdmin; }
+  public get username(): string { return this.api.username; }
   public get currentPath(): string { return this._currentPath; }
   public get currentDirectoryInfo(): DirectoryInfo { return _.cloneDeep(this._currentDirectoryInfo); }
   public get fileSelection(): FileSelection { return _.cloneDeep(this._fileSelection); }
