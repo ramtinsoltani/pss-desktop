@@ -26,6 +26,7 @@ export class ApiService {
 
   public isReady: BehaviorSubject<boolean> = new BehaviorSubject<boolean>(! this._disabled);
   public onAuthenticationChanged: Subject<boolean> = new Subject<boolean>();
+  public onEmptyQueues: Subject<void> = new Subject<void>();
 
   constructor(
     private ipc: IpcService
@@ -273,6 +274,8 @@ export class ApiService {
 
       if ( this._disabled ) return reject('Service is disabled due to server health check!');
 
+      this.onEmptyQueues.next();
+
       this.server<MessageResponse>('/auth/logout', 'post')
       .then(response => {
 
@@ -295,6 +298,8 @@ export class ApiService {
 
       if ( this._disabled ) return reject(new Error('Service is disabled due to server health check!'));
       if ( ! this._admin ) return reject(new Error('This operation requires user to be an admin!'));
+
+      if ( username === this._username ) this.onEmptyQueues.next();
 
       this.server<MessageResponse>('/auth/user', 'delete', null, { username: username }, { 'content-type': 'application/json' })
       .then(response => {

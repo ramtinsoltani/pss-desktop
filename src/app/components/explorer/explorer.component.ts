@@ -135,12 +135,28 @@ export class ExplorerComponent implements OnInit, OnDestroy {
 
     for ( const filename in this.selection ) {
 
+      if ( this.app.isInDownloadQueue(path.join(this.app.currentPath, filename)) ) {
+
+        this.app.sendNotification(`File Deleting`, `Cannot delete path because it is used in the download queue.`);
+        continue;
+
+      }
+
+      if ( this.app.isInUploadQueue(path.join(this.app.currentPath, filename)) ) {
+
+        this.app.sendNotification(`File Deleting`, `Cannot delete path because it is used in the upload queue.`);
+        continue;
+
+      }
+
       promises.push(this.app.rm(path.join(this.app.currentPath, filename)));
 
     }
 
+    if ( ! promises.length ) return;
+
     Promise.all(promises)
-    .then(() => this.app.sendNotification('File Deletion', `${this.deletionCount} file${this.deletionCount > 1 ? 's' : ''} have been successfully deleted.`))
+    .then(() => this.app.sendNotification('File Deletion', `${promises.length} file${promises.length > 1 ? 's' : ''} have been successfully deleted.`))
     .catch(error => {
 
       this.app.sendNotification('File Deletion', 'File deletion failed due to an error!');
@@ -183,6 +199,9 @@ export class ExplorerComponent implements OnInit, OnDestroy {
   public deletePath(_path: string): void {
 
     this.onInfoModalClosed();
+
+    if ( this.app.isInDownloadQueue(_path) ) return this.app.sendNotification(`File Deleting`, `Cannot delete path because it is used in the download queue.`);
+    if ( this.app.isInUploadQueue(_path) ) return this.app.sendNotification(`File Deleting`, `Cannot delete path because it is used in the upload queue.`);
 
     this.app.rm(_path)
     .then(() => {

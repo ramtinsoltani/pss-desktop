@@ -62,6 +62,16 @@ export class AppService {
 
     this.onPathUpdated.subscribe(() => this.deselectAll());
 
+    this.api.onEmptyQueues.subscribe(() => {
+
+      this._uploadQueue = [];
+      this._downloadQueue = [];
+
+      if ( this._uploading ) this.cancelUpload(-1);
+      if ( this._downloading ) this.cancelDownload(-1);
+
+    });
+
   }
 
   private downloadFile(file: QueueItem): void {
@@ -677,6 +687,18 @@ export class AppService {
     if ( index < 0 || index > this._downloadQueue.length - 1 ) return console.error(new AppError(`Upload index ${index} is out of range!`, `INVALID_INDEX`));
 
     this._downloadQueue.splice(index, 1);
+
+  }
+
+  public isInDownloadQueue(remote: string): boolean {
+
+    return (this._downloading && this._downloading.substr(0, remote.length) === remote) || _.filter(this._downloadQueue, item => item.remote.substr(0, remote.length) === remote).length > 0;
+
+  }
+
+  public isInUploadQueue(remote: string): boolean {
+
+    return (this._uploading && this._uploading.substr(0, remote.length) === remote) || _.filter(this._uploadQueue, item => item.remote.substr(0, remote.length) === remote).length > 0;
 
   }
 
