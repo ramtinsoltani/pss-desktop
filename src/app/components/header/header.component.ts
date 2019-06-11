@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { style, state, animate, transition, trigger } from '@angular/animations';
 import { NgForm } from '@angular/forms';
 import { AppService } from '@app/service/app';
-import { DirectoryInfo } from '@app/model/app';
+import { DirectoryInfo, QueueInfo } from '@app/model/app';
 import { UserResponse } from '@app/model/api';
 import { Subscription } from 'rxjs';
+import _ from 'lodash';
 
 @Component({
   selector: 'app-header',
@@ -22,6 +23,10 @@ import { Subscription } from 'rxjs';
 export class HeaderComponent implements OnInit, OnDestroy {
 
   private pathSub: Subscription;
+  private downloadsAdditionSub: Subscription;
+  private uploadsAdditionSub: Subscription;
+  private downloadsChangesSub: Subscription;
+  private uploadsChangesSub: Subscription;
 
   public root: boolean = true;
   public currentPath: string;
@@ -33,6 +38,11 @@ export class HeaderComponent implements OnInit, OnDestroy {
   public currentAccountView: AccountView = AccountView.Self;
   public accountView = AccountView;
   public newError: string = null;
+  public showQueueModal: boolean = false;
+  public currentQueueView: QueueView = QueueView.Downloads;
+  public queueView = QueueView;
+  public downloads: QueueInfo[] = [];
+  public uploads: QueueInfo[] = [];
 
   constructor(
     private app: AppService,
@@ -48,6 +58,124 @@ export class HeaderComponent implements OnInit, OnDestroy {
       this.detector.detectChanges();
 
     });
+
+    // Get all queues
+    this.downloads = this.app.getDownloadQueue();
+    this.uploads = this.app.getUploadQueue();
+    this.detector.detectChanges();
+
+    // Subscribe to queue additions
+    this.downloadsAdditionSub = this.app.onDownloadQueued.subscribe(info => {
+
+      this.downloads.push(info);
+      this.detector.detectChanges();
+
+    });
+
+    this.uploadsAdditionSub = this.app.onUploadQueued.subscribe(info => {
+
+      this.uploads.push(info);
+      this.detector.detectChanges();
+
+    });
+
+    // Subscribe to queue changes
+    this.downloadsChangesSub = this.app.onDownloadQueueUpdated.subscribe(info => {
+
+      const index = _.findIndex(this.downloads, item => item.path === info.path);
+
+      if ( index === -1 ) {
+
+        console.log(this.downloads, info);
+        return console.error(`Item with path ${info.path} was not found in the downloads queue!`);
+
+      }
+
+      if ( info.done ) {
+
+        this.downloads.splice(index, 1);
+        this.detector.detectChanges();
+
+        return;
+
+      }
+
+      if ( this.downloads[index].progress === info.progress ) return;
+
+      this.downloads[index] = info;
+
+      this.detector.detectChanges();
+
+    });
+
+    this.uploadsChangesSub = this.app.onUploadQueueUpdated.subscribe(info => {
+
+      const index = _.findIndex(this.uploads, item => item.path === info.path);
+
+      if ( index === -1 ) return console.error(`Item with path ${info.path} was not found in the uploads queue!`);
+
+      if ( info.done ) {
+
+        this.uploads.splice(index, 1);
+        this.detector.detectChanges();
+
+        return;
+
+      }
+
+      if ( this.uploads[index].progress === info.progress ) return;
+
+      this.uploads[index] = info;
+
+      this.detector.detectChanges();
+
+    });
+
+  }
+
+  public cancelDownload(index: number): void {
+
+    this.app.cancelDownload(index - 1);
+
+    if ( index > 0 ) {
+
+      this.downloads.splice(index, 1);
+      this.detector.detectChanges();
+
+    }
+
+  }
+
+  public cancelUpload(index: number): void {
+
+    this.app.cancelUpload(index - 1);
+
+    if ( index > 0 ) {
+
+      this.uploads.splice(index, 1);
+      this.detector.detectChanges();
+
+    }
+
+  }
+
+  public toggleQueueView(): void {
+
+    if ( this.currentQueueView === QueueView.Downloads ) this.currentQueueView = QueueView.Uploads;
+    else this.currentQueueView = QueueView.Downloads;
+
+  }
+
+  public onShowQueue(): void {
+
+    this.currentQueueView = QueueView.Downloads;
+    this.showQueueModal = true;
+
+  }
+
+  public onQueueModalClosed(): void {
+
+    this.showQueueModal = false;
 
   }
 
@@ -265,6 +393,10 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
 
     if ( this.pathSub && ! this.pathSub.closed ) this.pathSub.unsubscribe();
+    if ( this.downloadsAdditionSub && ! this.downloadsAdditionSub.closed ) this.downloadsAdditionSub.unsubscribe();
+    if ( this.downloadsChangesSub && ! this.downloadsChangesSub.closed ) this.downloadsChangesSub.unsubscribe();
+    if ( this.uploadsAdditionSub && ! this.uploadsAdditionSub.closed ) this.uploadsAdditionSub.unsubscribe();
+    if ( this.uploadsChangesSub && ! this.uploadsChangesSub.closed ) this.uploadsChangesSub.unsubscribe();
 
   }
 
@@ -275,5 +407,12 @@ enum AccountView {
   Self,
   Others,
   New
+
+}
+
+enum QueueView {
+
+  Downloads,
+  Uploads
 
 }

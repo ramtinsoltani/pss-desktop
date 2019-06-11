@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, ipcMain, dialog, Notification } from 'electron';
+import { app, BrowserWindow, Menu, ipcMain, dialog, Notification, WebContents } from 'electron';
 import fs from 'fs-extra';
 import path from 'path';
 import request from 'request';
@@ -15,13 +15,20 @@ interface IPCResponse {
 
 interface IPCEvent {
 
-  sender: IPCSender;
+  sender: WebContents;
 
 }
 
-interface IPCSender {
+interface WebContentsEx extends WebContents {
 
   send: (channel: string, response: IPCResponse) => void;
+
+}
+
+interface FileCancel {
+
+  type: string; // 'upload', 'download', 'any'
+  remote: string;
 
 }
 
@@ -43,7 +50,7 @@ class AppError extends Error {
 class ElectronApp {
 
   private window: BrowserWindow;
-  private onKilled: Subject<void> = new Subject();
+  private onCancel: Subject<FileCancel> = new Subject();
   private disableDevtools: boolean = true;
   private userServerUrl: string = null;
   private userPort: number = null;
@@ -103,7 +110,10 @@ class ElectronApp {
     // Quit when all windows are closed.
     app.on('window-all-closed', () => {
 
-      this.onKilled.next();
+      this.onCancel.next({
+        type: 'any',
+        remote: null
+      });
 
       // On macOS specific close process
       if ( process.platform !== 'darwin' ) app.quit();
@@ -240,7 +250,7 @@ class ElectronApp {
       this.uploadFile(filename, size, token, remoteFilename, event.sender, id)
       .then(response => {
 
-        event.sender.send(`file-upload:${id}`, {
+        if ( ! event.sender.isDestroyed() ) event.sender.send(`file-upload:${id}`, {
           data: [response],
           state: 'done',
           close: true
@@ -249,7 +259,7 @@ class ElectronApp {
       })
       .catch(error => {
 
-        event.sender.send(`file-upload:${id}`, {
+        if ( ! event.sender.isDestroyed() ) event.sender.send(`file-upload:${id}`, {
           data: [error],
           state: 'error',
           close: true
@@ -271,7 +281,7 @@ class ElectronApp {
       this.downloadFile(remoteFilename, filename, token, event.sender, id)
       .then(response => {
 
-        event.sender.send(`file-download:${id}`, {
+        if ( ! event.sender.isDestroyed() ) event.sender.send(`file-download:${id}`, {
           data: [response],
           state: 'done',
           close: true
@@ -280,7 +290,7 @@ class ElectronApp {
       })
       .catch(error => {
 
-        event.sender.send(`file-download:${id}`, {
+        if ( ! event.sender.isDestroyed() ) event.sender.send(`file-download:${id}`, {
           data: [error],
           state: 'error',
           close: true
@@ -303,6 +313,16 @@ class ElectronApp {
 
       this.userServerUrl = url;
       this.userPort = port;
+
+    });
+
+    // For cancelling download/upload operations
+    ipcMain.on('file-cancel', (event: IPCEvent, id: string, type: string, remote: string) => {
+
+      this.onCancel.next({
+        type: type,
+        remote: remote
+      });
 
     });
 
@@ -419,12 +439,13 @@ class ElectronApp {
 
   }
 
-  private downloadFile(remoteFilename: string, filename: string, token: string, listener: IPCSender, id: string): Promise<any> {
+  private downloadFile(remoteFilename: string, filename: string, token: string, listener: WebContentsEx, id: string): Promise<any> {
 
     return new Promise((resolve, reject) => {
 
       let progress: number = 0;
       let stream: fs.WriteStream = null;
+      let cancelled: boolean = false;
 
       const r = request.get({
         uri: `${this.userServerUrl || this.config.defaultServerUrl}:${this.userPort || this.config.defaultServerPort}/fs${remoteFilename}`,
@@ -463,12 +484,30 @@ class ElectronApp {
         if ( ! stream ) return;
 
         stream.close();
-        resolve({ status: 200 });
+        if ( ! cancelled ) resolve({ status: 200 });
+        if ( sub && ! sub.closed ) sub.unsubscribe();
 
       })
-      .on('error', reject);
+      .on('error', error => {
 
-      const sub = this.onKilled.subscribe(() => {
+        reject(error);
+        if ( sub && ! sub.closed ) sub.unsubscribe();
+
+      })
+      .on('abort', () => {
+
+        fs.unlink(filename)
+        .catch(console.log)
+        .finally(() => resolve({ abort: true }));
+
+      });
+
+      const sub = this.onCancel.subscribe(cancel => {
+
+        if ( cancel.type === 'upload' ) return;
+        if ( cancel.type !== 'any' && cancel.remote !== remoteFilename ) return;
+
+        cancelled = true;
 
         sub.unsubscribe();
         r.abort();
@@ -479,11 +518,12 @@ class ElectronApp {
 
   }
 
-  private uploadFile(filename: string, size: number, token: string, remoteFilename: string, listener: IPCSender, id: string): Promise<any> {
+  private uploadFile(filename: string, size: number, token: string, remoteFilename: string, listener: WebContentsEx, id: string): Promise<any> {
 
     return new Promise((resolve, reject) => {
 
       let progress: number = 0;
+      let cancelled: boolean = false;
       const r = request.post({
         uri: `${this.userServerUrl || this.config.defaultServerUrl}:${this.userPort || this.config.defaultServerPort}/fs${remoteFilename}`,
         qs: { token: token },
@@ -509,15 +549,34 @@ class ElectronApp {
 
         if ( response.statusCode !== 200 ) return reject({ status: response.statusCode });
 
-        resolve({
+        if ( ! cancelled ) resolve({
           status: response.statusCode,
           body: response.body
         });
 
-      })
-      .on('error', reject);
+        if ( sub && ! sub.closed ) sub.unsubscribe();
 
-      const sub = this.onKilled.subscribe(() => {
+      })
+      .on('error', error => {
+
+        if ( sub && ! sub.closed ) sub.unsubscribe();
+        reject(error);
+
+      })
+      .on('abort', () => {
+
+        this.serverAPI(`/fs${remoteFilename}`, 'delete', { token: token }, undefined, undefined)
+        .catch(console.log)
+        .finally(() => resolve({ abort: true }));
+
+      });
+
+      const sub = this.onCancel.subscribe(cancel => {
+
+        if ( cancel.type === 'download' ) return;
+        if ( cancel.type !== 'any' && cancel.remote !== remoteFilename ) return;
+
+        cancelled = true;
 
         sub.unsubscribe();
         r.abort();

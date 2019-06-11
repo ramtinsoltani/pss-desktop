@@ -16,7 +16,6 @@ export class ExplorerComponent implements OnInit, OnDestroy {
   private selectionSub: Subscription;
   private downloadSub: Subscription;
   private uploadSub: Subscription;
-  private detectionInterval: NodeJS.Timeout;
 
   public currentDir: DirectoryInfo;
   public selection: FileSelection;
@@ -62,19 +61,15 @@ export class ExplorerComponent implements OnInit, OnDestroy {
 
     this.downloadSub = this.app.onDownloadQueueUpdated.subscribe(info => {
 
-      if ( ! info.done ) {
+      if ( ! info.done && (! this.downloadInfo[info.path] || this.downloadInfo[info.path].progress !== info.progress) ) {
 
         this.downloadInfo[info.path] = info;
-        clearInterval(this.detectionInterval);
-        this.detectionInterval = setInterval(() => this.detector.detectChanges(), 100);
         this.detector.detectChanges();
 
       }
-      else {
+      else if ( info.done ) {
 
         delete this.downloadInfo[info.path];
-        clearInterval(this.detectionInterval);
-        this.detectionInterval = undefined;
         this.detector.detectChanges();
 
       }
@@ -83,19 +78,15 @@ export class ExplorerComponent implements OnInit, OnDestroy {
 
     this.uploadSub = this.app.onUploadQueueUpdated.subscribe(info => {
 
-      if ( ! info.done ) {
+      if ( ! info.done && (! this.uploadInfo[info.path] || this.uploadInfo[info.path].progress !== info.progress) ) {
 
         this.uploadInfo[info.path] = info;
-        clearInterval(this.detectionInterval);
-        this.detectionInterval = setInterval(() => this.detector.detectChanges(), 100);
         this.detector.detectChanges();
 
       }
-      else {
+      else if ( info.done ) {
 
         delete this.uploadInfo[info.path];
-        clearInterval(this.detectionInterval);
-        this.detectionInterval = undefined;
         this.detector.detectChanges();
 
       }
@@ -387,8 +378,6 @@ export class ExplorerComponent implements OnInit, OnDestroy {
     if ( this.selectionSub && ! this.selectionSub.closed ) this.selectionSub.unsubscribe();
     if ( this.downloadSub && ! this.downloadSub.closed ) this.downloadSub.unsubscribe();
     if ( this.uploadSub && ! this.uploadSub.closed ) this.uploadSub.unsubscribe();
-
-    clearInterval(this.detectionInterval);
 
   }
 

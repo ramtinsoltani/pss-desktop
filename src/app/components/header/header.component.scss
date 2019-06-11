@@ -20,7 +20,7 @@ span.path {
   flex-grow: 1;
 }
 
-.user-item {
+.list-item {
   color: map-get($colors, gray-dark);
   display: flex;
   align-items: center;
@@ -31,4 +31,22 @@ span.path {
   span.path {
     color: map-get($colors, accent);
   }
+  .flex-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+}
+
+.list-item-large {
+  min-height: 50px;
+  flex-wrap: wrap;
+}
+
+.empty {
+  font-size: 12px;
+  width: 100%;
+  text-align: center;
+  color: map-get($colors, gray-dark);
 }

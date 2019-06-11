@@ -31,7 +31,12 @@ import {
   faEllipsisV,
   faTerminal,
   faCrown,
-  faKey
+  faKey,
+  faCloudUploadAlt,
+  faCloudDownloadAlt,
+  faTimes,
+  faFileDownload,
+  faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 
 export function installIcons() {
@@ -68,7 +73,12 @@ export function installIcons() {
     faEllipsisV,
     faTerminal,
     faCrown,
-    faKey
+    faKey,
+    faCloudUploadAlt,
+    faCloudDownloadAlt,
+    faFileDownload,
+    faTimes,
+    faClipboardList
   );
 
 }

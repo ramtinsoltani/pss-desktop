@@ -6,6 +6,7 @@ import { FileInfo, DirectoryInfo, Queue, QueueItem, FileSelection, QueueInfo } f
 import { AppError } from '@app/common/error';
 import { DirectoryInfoResponse, UsersListResponse, MessageResponse, DiskInfoResponse, SearchResultResponse } from '@app/model/api';
 import _ from 'lodash';
+import path from 'path';
 
 @Injectable({
   providedIn: 'root'
@@ -29,6 +30,8 @@ export class AppService {
   public onDownloadQueueUpdated: Subject<QueueInfo> = new Subject();
   public onUploadQueueUpdated: Subject<QueueInfo> = new Subject();
   public serverModalRequested: Subject<void> = new Subject();
+  public onDownloadQueued: Subject<QueueInfo> = new Subject();
+  public onUploadQueued: Subject<QueueInfo> = new Subject();
 
   constructor(
     private api: ApiService,
@@ -87,7 +90,10 @@ export class AppService {
         });
 
       },
-      'done': () => {
+      'done': response => {
+
+        if ( response.abort ) this.sendNotification(`File Download`, `Downloading file "${path.basename(file.remote)}" was cancelled!`);
+        else this.sendNotification(`File Download`, `Downloading file "${path.basename(file.remote)}" has finished.`);
 
         file.subject.complete();
         this.onDownloadQueueUpdated.next({
@@ -98,6 +104,8 @@ export class AppService {
 
       },
       'error': (error: any) => {
+
+        this.sendNotification(`File Download`, `File "${path.basename(file.remote)}" has failed to download due to an error!`);
 
         if ( error.code === 'ECONNREFUSED' ) this.api.checkHealth();
 
@@ -146,7 +154,10 @@ export class AppService {
         });
 
       },
-      'done': () => {
+      'done': response => {
+
+        if ( response.abort ) this.sendNotification(`File Upload`, `Uploading file "${path.basename(file.remote)}" was cancelled!`);
+        else this.sendNotification(`File Upload`, `Uploading file "${path.basename(file.remote)}" has finished.`)
 
         this.onDiskSpaceRecalcNeeded.next();
 
@@ -160,6 +171,8 @@ export class AppService {
 
       },
       'error': (error: any) => {
+
+        this.sendNotification(`File Upload`, `Uploading file "${path.basename(file.remote)}" has failed due to an error!`);
 
         if ( error.code === 'ECONNREFUSED' ) this.api.checkHealth();
 
@@ -456,6 +469,12 @@ export class AppService {
       size: size
     });
 
+    this.onDownloadQueued.next({
+      path: remote,
+      progress: 0,
+      done: false
+    });
+
     if ( ! this._downloading ) this.executeDownloadQueue();
 
     return subject;
@@ -483,6 +502,12 @@ export class AppService {
       filename: filename,
       subject: subject,
       size: size
+    });
+
+    this.onUploadQueued.next({
+      path: remote,
+      progress: 0,
+      done: false
     });
 
     if ( ! this._uploading ) this.executeUploadQueue();
@@ -591,9 +616,67 @@ export class AppService {
 
   }
 
-  public setServerAddres(url: string, port: number): void {
+  public setServerAddress(url: string, port: number): void {
 
     this.api.setServerAddress(url, port);
+
+  }
+
+  public getDownloadQueue(): Array<QueueInfo> {
+
+    return _.map(this._downloadQueue, info => {
+
+      return {
+        path: info.remote,
+        progress: 0,
+        done: false
+      };
+
+    });
+
+  }
+
+  public getUploadQueue(): Array<QueueInfo> {
+
+    return _.map(this._uploadQueue, info => {
+
+      return {
+        path: info.remote,
+        progress: 0,
+        done: false
+      };
+
+    });
+
+  }
+
+  public cancelUpload(index: number): void {
+
+    if ( index === -1 ) {
+
+      this.ipc.send('file-cancel', ['upload', this._uploading]);
+      return;
+
+    }
+
+    if ( index < 0 || index > this._uploadQueue.length - 1 ) return console.error(new AppError(`Upload index ${index} is out of range!`, `INVALID_INDEX`));
+
+    this._uploadQueue.splice(index, 1);
+
+  }
+
+  public cancelDownload(index: number): void {
+
+    if ( index === -1 ) {
+
+      this.ipc.send('file-cancel', ['download', this._downloading]);
+      return;
+
+    }
+
+    if ( index < 0 || index > this._downloadQueue.length - 1 ) return console.error(new AppError(`Upload index ${index} is out of range!`, `INVALID_INDEX`));
+
+    this._downloadQueue.splice(index, 1);
 
   }
 

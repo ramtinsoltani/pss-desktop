@@ -115,13 +115,11 @@ export class AppComponent implements OnInit {
       const sub = this.app.upload(file.path, file.size, path.join(oldCurrentPath, file.filename)).subscribe(
         null,
         error => {
-          this.app.sendNotification('File upload', `File "${file.filename}" has failed to upload!`);
           console.error(error);
           sub.unsubscribe();
           this.refreshAfterFileUploadIfNecessary(path.join(oldCurrentPath, file.filename));
         },
         () => {
-          this.app.sendNotification('File upload', `File "${file.filename}" was successfully uploaded.`);
           sub.unsubscribe();
           this.refreshAfterFileUploadIfNecessary(path.join(oldCurrentPath, file.filename));
         }
@@ -304,7 +302,7 @@ export class AppComponent implements OnInit {
 
     }
 
-    this.app.setServerAddres(url, port);
+    this.app.setServerAddress(url, port);
     this.onServerModalClosed(form);
 
 

@@ -121,18 +121,7 @@ export class FooterComponent implements OnInit, OnDestroy {
 
         const file: FileInfo = <FileInfo>child;
 
-        const sub = this.app.download(file.path, this.selectionCount > 1 ? path.join(dirPath, file.filename) : dirPath, file.size).subscribe(
-          null,
-          error => {
-            this.app.sendNotification('File download', `File "${file.filename}" has failed to download!`);
-            console.error(error);
-            sub.unsubscribe();
-          },
-          () => {
-            this.app.sendNotification('File download', `File "${file.filename}" was successfully downloaded.`);
-            sub.unsubscribe();
-          }
-        );
+        this.app.download(file.path, this.selectionCount > 1 ? path.join(dirPath, file.filename) : dirPath, file.size);
 
       }
 

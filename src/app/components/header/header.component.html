@@ -6,6 +6,7 @@
   <span *ngIf="isAdmin()" class="tool-btn" (click)="toggleDevTools()"><fa-icon icon="terminal"></fa-icon></span>
   <span class="tool-btn" (click)="onServerChange()"><fa-icon icon="server"></fa-icon></span>
   <span class="tool-btn" (click)="onShowAccount()"><fa-icon icon="user"></fa-icon></span>
+  <span class="tool-btn" (click)="onShowQueue()"><fa-icon icon="clipboard-list"></fa-icon></span>
 </span>
 <app-modal [modal-show]="showDirectoryModal" [modal-close]="modalCloseButton1" (modal-closed)="onDirectoryModalClosed(df)">
   <form #df="ngForm" (ngSubmit)="onDirectoryModalConfirmed(df)">
@@ -31,7 +32,7 @@
     <ng-template [ngIf]="currentAccountView === accountView.Self">
       <form #daf="ngForm" (ngSubmit)="onDeleteAccount(daf)">
         <p>
-          Enter your username to delete your account.
+          Please confirm your username to delete your account.
         </p>
         <div class="input-vgroup">
           <input type="text" class="block" placeholder="Username" name="username" ngModel required username>
@@ -40,7 +41,7 @@
       </form>
     </ng-template>
     <ng-template [ngIf]="currentAccountView === accountView.Others">
-      <div class="user-item" *ngFor="let user of users" [ngClass]="{ admin: user.admin }">
+      <div class="list-item" *ngFor="let user of users" [ngClass]="{ admin: user.admin }">
         <fa-icon [fixedWidth]="true" [icon]="user.admin ? 'crown' : 'user'"></fa-icon>
         <span class="path">{{ user.username }}</span>
         <div class="tools">
@@ -65,5 +66,45 @@
     <button *ngIf="currentAccountView !== accountView.Self && isAdmin()" type="button" class="btn btn-primary btn-block" (click)="toggleNewUserView()"><fa-icon [icon]="currentAccountView === accountView.Others ? 'user-plus' : 'users'"></fa-icon>{{ currentAccountView === accountView.Others ? 'Add New User' : 'Manage Other Users' }}</button>
     <button *ngIf="currentAccountView === accountView.Self" type="button" class="btn btn-danger btn-block" (click)="logout()">Logout</button>
     <button type="button" class="btn btn-secondary btn-block" #modalCloseButton2>Close</button>
+  </div>
+</app-modal>
+<app-modal [modal-show]="showQueueModal" [modal-close]="modalCloseButton3" (modal-closed)="onQueueModalClosed()">
+  <div class="modal-header">
+    {{ currentQueueView === queueView.Downloads ? 'Downloads' : 'Uploads' }}
+  </div>
+  <div class="modal-body">
+    <ng-template [ngIf]="currentQueueView === queueView.Downloads">
+      <div class="list-item list-item-large" *ngFor="let download of downloads; let index = index">
+        <div class="flex-container">
+          <fa-icon [fixedWidth]="true" icon="file-download"></fa-icon>
+          <span class="path">{{ download.path }}</span>
+          <div class="tools">
+            <span class="tool-btn tool-btn-danger" (click)="cancelDownload(index)"><fa-icon icon="times"></fa-icon></span>
+          </div>
+        </div>
+        <app-progress-bar [progress]="download.progress"></app-progress-bar>
+      </div>
+      <div class="empty" *ngIf="! downloads.length">Download queue is empty</div>
+    </ng-template>
+    <ng-template [ngIf]="currentQueueView === queueView.Uploads">
+      <div class="list-item list-item-large" *ngFor="let upload of uploads; let index = index">
+        <div class="flex-container">
+          <fa-icon [fixedWidth]="true" icon="file-upload"></fa-icon>
+          <span class="path">{{ upload.path }}</span>
+          <div class="tools">
+            <span class="tool-btn tool-btn-danger" (click)="cancelUpload(index)"><fa-icon icon="times"></fa-icon></span>
+          </div>
+        </div>
+        <app-progress-bar [progress]="upload.progress"></app-progress-bar>
+      </div>
+      <div class="empty" *ngIf="! uploads.length">Upload queue is empty</div>
+    </ng-template>
+  </div>
+  <div class="modal-footer">
+    <button type="button" class="btn btn-primary btn-block" (click)="toggleQueueView()">
+      <fa-icon [icon]="currentQueueView === queueView.Downloads ? 'cloud-upload-alt' : 'cloud-download-alt'"></fa-icon>
+      {{ currentQueueView === queueView.Downloads ? 'Uploads' : 'Downloads' }}
+    </button>
+    <button type="button" class="btn btn-secondary btn-block" #modalCloseButton3>Close</button>
   </div>
 </app-modal>
